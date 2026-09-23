@@ -1,0 +1,16 @@
+export const KNOWN_PLACES = [
+  "Addis Ababa",
+  "Dire Dawa",
+  "Amhara",
+  "Oromia",
+  "Tigray",
+  "Afar",
+  "Somali",
+  "Benishangul-Gumuz",
+  "Gambela",
+  "Harari",
+  "Sidama",
+  "South Ethiopia",
+  "Central Ethiopia",
+  "South West Ethiopia",
+];

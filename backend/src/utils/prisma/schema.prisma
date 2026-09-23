@@ -1,0 +1,418 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  phoneNumber      String?           @unique
+  status           UserStatus        @default(ACTIVE)
+  suspensionReason String?
+  verifiedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  address          String?
+  firstName        String?
+  gender           String?
+  lastName         String?
+  level            Int               @default(1)
+  photo            String?
+  role             Role              @default(MEMBER)
+  passwordHash     String?
+  email            String?           @unique
+  username         String?           @unique
+  activities       ActivityLog[]
+  adminActions     AdminActionLog[]  @relation("AdminActions")
+  AuditLog         AuditLog[]
+  devices          Device[]
+  equbMembers      EqubMember[]
+  lotteryWins      LotteryRound[]    @relation("LotteryWinner")
+  lotterySpins     LotterySpin[]
+  notifications    NotificationLog[]
+  otpLogs          OtpLog[]
+  payments         Payment[]
+  confirmedPayouts Payout[]          @relation("PayoutConfirmedBy")
+  payouts          Payout[]          @relation("PayoutRecipient")
+  RefreshToken     RefreshToken[]
+  processedRefunds Refund[]
+  attachments      Attachment[]      @relation("UserAttachments")
+  supportTickets   SupportTicket[]
+  idStatus         IdStatus          @default(NONE)
+  idType           String?
+  idNumber         String?
+  userCode         String?           @unique
+  equbRegistrations EqubRegistration[]
+  sellerListings   EqubShareListing[] @relation("SellerListings")
+  buyerListings    EqubShareListing[] @relation("BuyerListings")
+}
+
+enum IdStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model SupportTicket {
+  id        String       @id @default(uuid())
+  userId    String
+  subject   String
+  message   String
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum AttachmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  userId    String
+  fileUrl   String
+  fileName  String?
+  fileType  String?
+  publicId  String?
+  about     String?
+  status    AttachmentStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  user      User     @relation("UserAttachments", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Device {
+  id           String    @id @default(uuid())
+  userId       String
+  deviceId     String
+  lastLoginAt  DateTime?
+  lastLogoutAt DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+}
+
+model OtpLog {
+  id          String    @id @default(uuid())
+  userId      String
+  phoneNumber String
+  code        String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  attempts    Int       @default(0)
+  ipAddress   String?
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([phoneNumber])
+}
+model Equb {
+  id                 String          @id @default(uuid())
+  name               String
+  contributionAmount Int
+  numberOfMembers    Int
+  total              Int           
+  startDate          DateTime
+  endDate            DateTime
+  payoutOrderType    PayoutOrderType
+  state              EqubState       @default(DRAFT)
+  suspensionReason   String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  frontImage         String?
+  backImage          String?
+  propertyModel      String?
+  type               EqubType        @default(DAILY)
+  members            EqubMember[]
+  payments           Payment[]
+  payouts            Payout[]
+  shareListings      EqubShareListing[]
+  sellingPrice       Int?
+}
+
+model AppConfig {
+  id         String    @id @default(uuid())
+  appLive    Boolean   @default(false)
+  launchDate DateTime?
+  updatedAt  DateTime  @updatedAt
+}
+
+model EqubMember {
+  id       String    @id @default(uuid())
+  equbId   String
+  userId   String
+  joinedAt DateTime  @default(now())
+  leftAt       DateTime?
+  isSuspended  Boolean   @default(false)
+  suspensionReason String?
+  equb     Equb      @relation(fields: [equbId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([equbId, userId])
+}
+
+model Payment {
+  id             String          @id @default(uuid())
+  userId         String
+  equbId         String
+  amount         Int
+  cycleNumber    Int
+  provider       PaymentProvider
+  status         PaymentStatus   @default(PENDING)
+  transactionRef String          @unique
+  paidAt         DateTime?
+  dueDate        DateTime
+  createdAt      DateTime        @default(now())
+  equb           Equb            @relation(fields: [equbId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refunds        Refund[]
+
+  @@unique([userId, equbId, cycleNumber])
+}
+
+model Payout {
+  id                String    @id @default(uuid())
+  equbId            String
+  cycleNumber       Int
+  recipientUserId   String
+  confirmedByUserId String?
+  confirmedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  confirmedByRole   Role?
+  confirmedBy       User?     @relation("PayoutConfirmedBy", fields: [confirmedByUserId], references: [id])
+  equb              Equb      @relation(fields: [equbId], references: [id], onDelete: Cascade)
+  recipient         User      @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  @@unique([equbId, cycleNumber])
+}
+
+model NotificationLog {
+  id                String              @id @default(uuid())
+  userId            String
+  type              NotificationType
+  channel           NotificationChannel
+  status            NotificationStatus
+  title             String?
+  message           String?
+  providerMessageId String?
+  createdAt         DateTime            @default(now())
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WebhookLog {
+  id           String          @id @default(uuid())
+  provider     PaymentProvider
+  payload      Json
+  failedReason String?
+  createdAt    DateTime        @default(now())
+}
+
+model AdminActionLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  action    String
+  target    String
+  targetId  String?
+  reason    String?
+  createdAt DateTime @default(now())
+  admin     User     @relation("AdminActions", fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model Refund {
+  id            String       @id @default(uuid())
+  paymentId     String
+  amount        Int
+  status        RefundStatus @default(REQUESTED)
+  reason        String?
+  providerRef   String?
+  createdAt     DateTime     @default(now())
+  processedAt   DateTime?
+  processedById String?
+  payment       Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  processedBy   User?        @relation(fields: [processedById], references: [id])
+}
+
+model LotteryRound {
+  id        String        @id @default(uuid())
+  date      DateTime      @unique
+  isActive  Boolean       @default(true)
+  winnerId  String?
+  reward    String?
+  createdAt DateTime      @default(now())
+  winner    User?         @relation("LotteryWinner", fields: [winnerId], references: [id])
+  spins     LotterySpin[]
+}
+
+model LotterySpin {
+  id      String       @id @default(uuid())
+  userId  String
+  roundId String
+  spunAt  DateTime     @default(now())
+  result  String?
+  round   LotteryRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roundId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  deviceId  String?
+  ipAddress String?
+  action    String
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, action])
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum Role {
+  ADMIN
+  SUPER_ADMIN
+  FINANCE_ADMIN
+  CUSTOMER_SERVICE_ADMIN
+  MEMBER
+}
+
+enum EqubType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  HOUSE
+  VEHICLE
+  PHONE
+  TV
+  REFRIGERATOR
+  SOFA
+}
+
+enum EqubState {
+  DRAFT
+  ACTIVE
+  IN_PROGRESS
+  COMPLETED
+  SUSPENDED
+}
+
+enum PayoutOrderType {
+  MANUAL
+  RANDOM
+}
+
+enum PaymentProvider {
+  TELEBIRR
+  CBE
+  DASHEN
+  COOP
+  AMHARA
+  AWASH
+  ABYISINIA
+  SAFARICOM
+  MASTERCARD
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  OVERDUE
+  FAILED
+}
+
+enum NotificationType {
+  OTP
+  REMINDER
+  PAYMENT_SUCCESS
+  PAYOUT_CONFIRMED
+}
+
+enum NotificationChannel {
+  SMS
+  IN_APP
+}
+
+enum NotificationStatus {
+  SENT
+  FAILED
+}
+
+enum RefundStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+}
+
+model EqubRegistration {
+  id            String   @id @default(uuid())
+  userId        String
+  fullName      String
+  phoneNumber   String
+  address       String
+  monthlyIncome String
+  type          EqubType @default(VEHICLE)
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+}
+
+model EqubShareListing {
+  id              String        @id @default(uuid())
+  equbId          String
+  sellerId        String
+  sellingPrice    Int
+  remainingRounds Int
+  status          ListingStatus @default(ACTIVE)
+  buyerId         String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  equb            Equb          @relation(fields: [equbId], references: [id], onDelete: Cascade)
+  seller          User          @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer           User?         @relation("BuyerListings", fields: [buyerId], references: [id])
+
+  @@index([equbId, status])
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+}
