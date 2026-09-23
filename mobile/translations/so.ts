@@ -1,6 +1,6 @@
 export default {
   title: "Ku soo dhawoow Digital Chereta",
-  subtitle: "Aan ilaashanno dhaqankeena!",
+  subtitle: "Ka qaybqaado! Guulayso!",
   desc: "Gali lambarkaaga telefoonka si aad u sii wadato",
   next: "Xiga",
 

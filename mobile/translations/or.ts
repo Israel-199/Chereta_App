@@ -1,6 +1,6 @@
 export default {
   title: "Baga nagaan dhufte Digital Chereta",
-  subtitle: "Aadaa keenya tikfachaa yeroo ammayyoomnu!",
+  subtitle: "Hirmaadhaa! Moo'aa!",
   desc: "Lakkoofsa bilbila kee galchi itti fufuuf",
   next: "Itti aanu",
 

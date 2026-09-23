@@ -1,6 +1,6 @@
 export default {
   title: "Welcome To Digital Chereta",
-  subtitle: "Preserving our culture as we modernize.",
+  subtitle: "Enter! Win!",
   desc: "Enter your phone number to continue",
   next: "Next",
 
