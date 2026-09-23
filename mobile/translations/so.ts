@@ -1,5 +1,5 @@
 export default {
-  title: "Ku soo dhawoow Habesha Equb",
+  title: "Ku soo dhawoow Digital Chereta",
   subtitle: "Aan ilaashanno dhaqankeena!",
   desc: "Gali lambarkaaga telefoonka si aad u sii wadato",
   next: "Xiga",
@@ -48,7 +48,7 @@ export default {
   equbJoinedTab: "Isku biiray Equb",
   accountTab: "Akoon",
 
-  footerRights: "© 2026 Habesha Equb. Xuquuqda oo dhan waa la ilaaliyay.",
+  footerRights: "© 2026 Digital Chereta. Xuquuqda oo dhan waa la ilaaliyay.",
 
   notificationJoin: "Gacal {username}, waad ku mahadsantahay ku biirista {equbname}. Fadlan ku bilow Equb-kaaga adoo riixaya bixinta oo dhamaystiraya lacag bixintaada.",
   notificationLeave: "Gacal {username}, waad ka baxday {equbname}.",
@@ -240,7 +240,7 @@ export default {
   ethiopianDate: "Sebtember 1/01/2019",
   days: "Maalmo",
   hours: "Saacado",
-  habeshaEqub: "Habesha Equb",
+  habeshaEqub: "Digital Chereta",
   minutes: "Daqiiqado",
   seconds: "Ilbiriqsi",
   gender: "Jinsiga *",

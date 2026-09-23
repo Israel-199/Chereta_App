@@ -204,7 +204,7 @@ const HomeScreen = () => {
     <View style={styles.root}>
       <Navbar
         leftIcon={navIcon}
-        title="Habesha Equb"
+        title="Digital Chereta"
         firstIcon={bellIcon}
         onFirstPress={handleNotifications}
         showNotificationBadge={true}

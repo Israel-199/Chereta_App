@@ -1,5 +1,5 @@
 export default {
-  title: "Baga nagaan dhufte Habesha Equb",
+  title: "Baga nagaan dhufte Digital Chereta",
   subtitle: "Aadaa keenya tikfachaa yeroo ammayyoomnu!",
   desc: "Lakkoofsa bilbila kee galchi itti fufuuf",
   next: "Itti aanu",
@@ -49,7 +49,7 @@ export default {
   equbJoinedTab: "Waliitti makaman Equb",
   accountTab: "Herrega",
 
-  footerRights: "© 2026 Habesha Equb. Mirgi hundi kan eegame.",
+  footerRights: "© 2026 Digital Chereta. Mirgi hundi kan eegame.",
   
   notificationJoin: "Kabajamoo {username}, {equbname} waan seenaniif galatoomaa. Maaloo kaffaltii kallaattiin kaffaluun Equb keessan jalqabaa.",
   notificationLeave: "Kabajamoo {username}, {equbname} keessaa baataniittu.",
@@ -246,7 +246,7 @@ export default {
   nothingChanged: "Homtuu hin jijjiiramne",
 
   preLaunch: "Jalqabni Dhufaa Jira",
-  habeshaEqub: "Habesha Equb",
+  habeshaEqub: "Digital Chereta",
   comingSoon: "Dhufaa Jira",
   paymentComingSoon: "Tajaajilli Kaffaltii Dhufaa Jira",
   paymentComingSoonDesc: "Tajaajila kaffaltii amansiisaa fi saffisaa Habesha Equb qopheessaa jirra.",

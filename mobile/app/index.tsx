@@ -160,7 +160,7 @@ export default function LoginScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <Navbar
           leftIcon={navLeftIcon}
-          title="Habesha Equb"
+          title="Digital Chereta"
           firstIcon={worldIcon}
           secondIcon={chevronIcon}
           language={language}

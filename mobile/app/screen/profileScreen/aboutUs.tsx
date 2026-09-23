@@ -75,7 +75,7 @@ export default function AboutUsScreen() {
             />
           </View>
           <Text style={[styles.companyName, { fontFamily: getFontFamily(true) }]}>
-            Habesha Equb
+            Digital Chereta
           </Text>
           <Text style={[styles.tagline, { fontFamily: getFontFamily(false) }]}>
             Financial Technology PLC
@@ -130,7 +130,7 @@ export default function AboutUsScreen() {
               {t.regulatedPlatform || "Authorized & Regulated Technology Platform"}
             </Text>
             <Text style={[styles.version, { fontFamily: getFontFamily(false) }]}>
-              Habesha Equb v1.0.0
+              Digital Chereta v1.0.0
             </Text>
           </View>
         </View>

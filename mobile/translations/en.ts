@@ -1,5 +1,5 @@
 export default {
-  title: "Welcome To Habesha Equb",
+  title: "Welcome To Digital Chereta",
   subtitle: "Preserving our culture as we modernize.",
   desc: "Enter your phone number to continue",
   next: "Next",
@@ -48,7 +48,7 @@ export default {
   equbJoinedTab: "Equb Buy",
   accountTab: "Account",
 
-  footerRights: "© 2026 Habesha Equb. All rights reserved.",
+  footerRights: "© 2026 Digital Chereta. All rights reserved.",
   
   notificationJoin: "Dear {username}, thank you for joining {equbname}. Please start your Equb by pressing pay and completing your payment.",
   notificationLeave: "Dear {username}, You have left {equbname}.",
@@ -252,7 +252,7 @@ export default {
   paymentComingSoon: "Payment Feature Coming Soon",
   paymentComingSoonDesc: "We are currently integrating secure and seamless digital payment options for Habesha Equb.",
   seconds: "Seconds",
-  habeshaEqub: "Habesha Equb",
+  habeshaEqub: "Digital Chereta",
   allFieldsRequired: "All fields are required",
   registerInfo: "Register",
   pay: "Fast Pay",

@@ -423,7 +423,7 @@ const AccountScreen = () => {
           <Text style={[styles.logoutText, nameFontStyle]}>{t?.logout}</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.version, regularFontStyle]}>Habesha Equb v1.0.0 (Build 2026)</Text>
+        <Text style={[styles.version, regularFontStyle]}>Digital Chereta v1.0.0 (Build 2026)</Text>
       </ScrollView>
 
       {/* Photo Picker Modal */}

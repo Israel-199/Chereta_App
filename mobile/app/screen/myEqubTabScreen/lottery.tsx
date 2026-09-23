@@ -390,7 +390,7 @@ export default function LotteryScreen() {
       <View style={styles.headerCard}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.headerTitle, { fontFamily: fontFamilyBold }]}>
-            {currentEqub?.name || t.habeshaEqub || "Habesha Equb"}
+            {currentEqub?.name || t.habeshaEqub || "Digital Chereta"}
           </Text>
           <Text style={[styles.headerSubtitle, { fontFamily: fontFamilyRegular }]}>
             {t.drawDateTitle || "Weekly Sunday Draw"} • {t.sundayDrawTime || "Sunday 10:00 LT (4:00 PM)"}

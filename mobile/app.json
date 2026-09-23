@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Habesha Equb",
-    "slug": "Habesha_Equb",
-    "version": "2.0.0",
+    "name": "Digital Chereta",
+    "slug": "Digital Chereta",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "habeshaequb",

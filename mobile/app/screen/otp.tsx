@@ -228,7 +228,7 @@ const resendOtpMutation = useMutation({
             />
           }
           language={language}
-          title="Habesha Equb"
+          title="Digital Chereta"
           firstIcon={<Fontisto name="world-o" size={20} color="#fff" />}
           secondIcon={
             <MaterialCommunityIcons
