@@ -1,23 +1,12 @@
 {
   "expo": {
     "name": "Digital Chereta",
-    "slug": "Digital Chereta",
+    "slug": "digital-chereta",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "habeshaequb",
-    "jsEngine": "hermes",
-    "newArchEnabled": true,
+    "scheme": "digitalchereta",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "androidNavigationBar": {
-      "backgroundColor": "#000000",
-      "barStyle": "light-content"
-    },
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/fonts/*"
@@ -88,13 +77,14 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c4a4049f-c6f9-4f98-b8f5-7f35ff07a8cd"
+        "projectId": "884df8ac-6e71-41d2-a8dd-fe8c7b316444"
       },
       "expo-navigation-bar": {
         "position": "absolute",
         "backgroundColor": "#000000",
         "borderColor": "#000000",
-        "barStyle": "light"
+        "barStyle": "light",
+        "style": "light"
       }
     }
   }
