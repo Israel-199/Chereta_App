@@ -74,9 +74,9 @@
         "expo-navigation-bar",
         {
           "position": "absolute",
-          "visibility": "visible",
           "backgroundColor": "#000000",
-          "borderColor": "#000000"
+          "borderColor": "#000000",
+          "barStyle": "light"
         }
       ],
       "./plugins/android-nav-fix",
@@ -92,9 +92,9 @@
       },
       "expo-navigation-bar": {
         "position": "absolute",
-        "visibility": "visible",
         "backgroundColor": "#000000",
-        "borderColor": "#000000"
+        "borderColor": "#000000",
+        "barStyle": "light"
       }
     }
   }

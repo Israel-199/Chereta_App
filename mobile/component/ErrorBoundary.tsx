@@ -107,7 +107,7 @@ const ErrorUI = ({ retry }: { retry: () => void }) => {
           }}
           style={{
             marginTop: 30,
-            backgroundColor: "#0B3C8A",
+            backgroundColor: "#8DB048",
             paddingVertical: scale * 0.025,
             width: width * 0.5,
             borderRadius: scale * 0.02,

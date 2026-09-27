@@ -11,7 +11,6 @@ import {
   Animated,
   StyleSheet,
   useWindowDimensions,
-  InteractionManager,
   Alert,
 } from "react-native";
 import { Image } from 'expo-image';
@@ -24,15 +23,26 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import Navbar from "@/component/Navbar";
+import ImmersiveNavScreen from "@/component/ImmersiveNavScreen";
 import { IOSLoader } from "@/component/ButtonLoadingEffect";
 import { translations } from "@/translations";
 import { useAuthStore } from "@/store/auth";
-import * as Notifications from "expo-notifications";
+let Notifications: any = null;
+try {
+  Notifications = require("expo-notifications");
+} catch (e) {
+  console.log("expo-notifications not available in this environment");
+}
 import Toast from "react-native-toast-message";
 import { useLoginScreenStyles } from "@/styles/loginScreenStyles";
 import { useAppConfigStore } from "@/store/appConfigStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { NavigationBar } from "expo-navigation-bar";
+import { LEMON_GREEN } from "@/constants/theme";
+import { applyAndroidSystemNavigationBar } from "@/utils/androidSystemBar";
+import { runWhenIdle } from "@/utils/runWhenIdle";
+import { useCheretaCache } from "@/store/cheretaCache";
 
 const ETHIOPIC_LANGUAGES = new Set(["አማርኛ", "ትግርኛ"]);
 const LANGUAGES = ["English", "አማርኛ", "Afaan Oromo", "Af Somali", "ትግርኛ"];
@@ -42,7 +52,9 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    loadConfig();
+    applyAndroidSystemNavigationBar();
+    runWhenIdle(() => loadConfig());
+    useCheretaCache.getState().prefetchTabs();
   }, [loadConfig]);
 
   const { width: windowWidth } = useWindowDimensions();
@@ -84,13 +96,15 @@ export default function LoginScreen() {
     mutationFn: requestOtp,
     onSuccess: (data) => {
       if (data.code) {
-        Notifications.scheduleNotificationAsync({
-          content: { 
-            title: t.otpVerification || "Your OTP Code", 
-            body: `${t.otpSent || "Code"}: ${data.code}` 
-          },
-          trigger: null,
-        }).catch(() => {});
+        if (Notifications) {
+          Notifications.scheduleNotificationAsync({
+            content: { 
+              title: t.otpVerification || "Your OTP Code", 
+              body: `${t.otpSent || "Code"}: ${data.code}` 
+            },
+            trigger: null,
+          }).catch(() => {});
+        }
 
         Alert.alert(
           t.otpVerification || "Your OTP Code",
@@ -100,8 +114,9 @@ export default function LoginScreen() {
       }
 
       if (data.token) {
+        useCheretaCache.getState().prefetchTabs(data.token);
         if (data.needsProfileCompletion) router.push("/screen/registerScreen");
-        else router.replace("/home");
+        else router.replace("/(tabs)/home");
 
         if (data.messageKey && !data.needsProfileCompletion) {
           Toast.show({ type: "success", text1: t[data.messageKey] });
@@ -150,27 +165,30 @@ export default function LoginScreen() {
     );
   }, [showDropdown, styles, getFontFamily, language, setLanguage]);
 
-  const navLeftIcon = useMemo(() => <FontAwesome6 name="down-left-and-up-right-to-center" size={16} color="#fff" />, []);
+  const navLeftIcon = useMemo(() => <MaterialCommunityIcons name="gavel" size={22} color="#fff" />, []);
   const worldIcon = useMemo(() => <Fontisto name="world-o" size={19} color="#fff" />, []);
   const chevronIcon = useMemo(() => <MaterialCommunityIcons name="chevron-down" size={19} color="#fff" />, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: "white" }}>
-      <StatusBar style="light" backgroundColor="#0B3C8A" />
+      {Platform.OS === "android" && <NavigationBar style="dark" hidden={false} />}
+      {/* @ts-ignore */}
+      <StatusBar style="light" backgroundColor={LEMON_GREEN} translucent={Platform.OS === "android"} />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-        <Navbar
-          leftIcon={navLeftIcon}
-          title="Digital Chereta"
-          firstIcon={worldIcon}
-          secondIcon={chevronIcon}
-          language={language}
-          onSecondPress={toggleDropdown}
-        />
         {languageDropdown}
-        <ScrollView
+        <ImmersiveNavScreen
+          navbar={
+            <Navbar
+              leftIcon={navLeftIcon}
+              title="Digital Chereta"
+              firstIcon={worldIcon}
+              secondIcon={chevronIcon}
+              language={language}
+              onSecondPress={toggleDropdown}
+            />
+          }
           contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between", paddingHorizontal: 10, width: "100%", maxWidth: 600, alignSelf: "center" }}
-          keyboardShouldPersistTaps="handled"
-          removeClippedSubviews={true}
+          scrollViewProps={{ keyboardShouldPersistTaps: "handled", removeClippedSubviews: true }}
         >
           <View>
             <View style={styles.logoContainer}>
@@ -198,7 +216,7 @@ export default function LoginScreen() {
               </View>
             </TouchableOpacity>
           </View>
-        </ScrollView>
+        </ImmersiveNavScreen>
       </KeyboardAvoidingView>
       <View style={{ position: "absolute", bottom: (Platform.OS === 'ios' ? insets.bottom : 0) + 5, left: 0, right: 0, paddingVertical: 5, backgroundColor: "transparent", alignItems: "center" }}><Text style={{ fontSize: 11, color: "#6B7280", textAlign: "center", fontFamily: getFontFamily(false) }}>{t.footerRights}</Text></View>
     </View>

@@ -190,7 +190,7 @@ export default function TermsOfService() {
 
       {isRefreshing ? (
         <View style={styles.loaderContainer}>
-          <IOSLoader size={40} color="#0B3C8A" />
+          <IOSLoader size={40} color="#8DB048" />
         </View>
       ) : (
         <ScrollView 
@@ -297,13 +297,13 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: "#0B3C8A",
+    borderColor: "#8DB048",
     marginRight: 12,
     justifyContent: "center",
     alignItems: "center",
   },
   checkboxActive: {
-    backgroundColor: "#0B3C8A",
+    backgroundColor: "#8DB048",
   },
   checkboxLabel: {
     fontSize: 14,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   submitButton: {
-    backgroundColor: "#0B3C8A",
+    backgroundColor: "#8DB048",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

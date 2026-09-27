@@ -20,8 +20,7 @@ export const useAppConfigStore = create<State>((set) => ({
   loadConfig: async () => {
     try {
       const res = await getAppStatus();
-
-      const data = res.data;
+      const data = (res as { data?: typeof res }).data ?? res;
 
       set({
         appLive: data.appLive,

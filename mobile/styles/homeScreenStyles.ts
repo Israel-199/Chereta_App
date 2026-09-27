@@ -107,7 +107,7 @@ export const useHomeUIStyles = () => {
 
       marginVertical: verticalScale(baseSpacing * 0.6),
 
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#3D5D96",
       paddingVertical: verticalScale(baseSpacing * 1.5),
       paddingHorizontal: scale(baseSpacing * 1.5),
 
@@ -176,7 +176,7 @@ export const useHomeUIStyles = () => {
       marginHorizontal: scale(4),
     },
     activeDot: {
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#3D5D96",
     },
 
   });

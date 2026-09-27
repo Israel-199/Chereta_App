@@ -36,7 +36,7 @@ export const useJoinedEqubStyles = () => {
     },
     sectionTitle: {
       fontSize: isTablet ? moderateScale(18) : rs(16),
-      color: "#0B3C8A",
+      color: "#8DB048",
     },
     sectionCount: {
       marginLeft: "auto",
@@ -47,7 +47,7 @@ export const useJoinedEqubStyles = () => {
     },
     sectionCountText: {
       fontSize: rs(11),
-      color: "#0B3C8A",
+      color: "#8DB048",
     },
 
     card: {
@@ -57,7 +57,7 @@ export const useJoinedEqubStyles = () => {
       marginBottom: verticalScale(baseSpacing * 0.8),
       borderWidth: 1,
       borderColor: "#E5E7EB",
-      shadowColor: "#0B3C8A",
+      shadowColor: "#8DB048",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.06,
       shadowRadius: 8,
@@ -95,7 +95,7 @@ export const useJoinedEqubStyles = () => {
     },
     typeBadgeText: {
       fontSize: rs(10),
-      color: "#0B3C8A",
+      color: "#8DB048",
     },
 
     cardDetails: {
@@ -132,12 +132,12 @@ export const useJoinedEqubStyles = () => {
     },
     payBtn: {
       width: "100%",
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#8DB048",
       height: rs(48),
       borderRadius: moderateScale(8 * scaleFactor),
       alignItems: "center",
       justifyContent: "center",
-      shadowColor: "#0B3C8A",
+      shadowColor: "#8DB048",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 4,

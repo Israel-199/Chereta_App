@@ -48,11 +48,12 @@ export default function ScreenLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F2F4F7" }}>
-      <StatusBar style="light" backgroundColor="#0B3C8A" />
+      {/* @ts-ignore */}
+      <StatusBar style="light" backgroundColor="#8DB048" />
       {Platform.OS === "android" && (
         <RNStatusBar
           translucent
-          backgroundColor="#0B3C8A"
+          backgroundColor="#8DB048"
           barStyle="light-content"
         />
       )}
@@ -60,12 +61,12 @@ export default function ScreenLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          animation: "fade",
+          animation: "slide_from_right",
           presentation: "card",
           contentStyle: { backgroundColor: "#F2F4F7" },
 
           headerStyle: {
-            backgroundColor: "#0B3C8A",
+            backgroundColor: "#8DB048",
           },
 
           headerTitleAlign: "center",
@@ -88,31 +89,8 @@ export default function ScreenLayout() {
           name="notifications"
           options={{ title: "Notifications" }}
         />
-
-        <Stack.Screen
-          name="dailyEqubList"
-          options={{ title: t.dailyEqub, headerRight: refreshButton }}
-        />
-        <Stack.Screen
-          name="weeklyEqubList"
-          options={{ title: t.weeklyEqub, headerRight: refreshButton }}
-        />
-        <Stack.Screen
-          name="monthlyEqubList"
-          options={{ title: t.monthlyEqub, headerRight: refreshButton }}
-        />
-        <Stack.Screen
-          name="equbRegistration"
-          options={{ title: t.registerInfo, headerRight: refreshButton }}
-        />
-        <Stack.Screen
-          name="phoneEqubList"
-          options={{ title: t.phoneEqub, headerRight: refreshButton }}
-        />
-        <Stack.Screen
-          name="comingSoon"
-          options={{ title: t.comingSoon ?? "Coming Soon" }}
-        />
+        <Stack.Screen name="auction_details" options={{ animation: "slide_from_right" }} />
+        <Stack.Screen name="auction_results" options={{ animation: "slide_from_right" }} />
       </Stack>
     </View>
   );

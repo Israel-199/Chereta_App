@@ -1,16 +1,17 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from "react";
 import {
-  View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, InteractionManager, Platform, Modal,
+  View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Platform, Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from 'expo-image';
 import * as ImagePicker from "expo-image-picker";
 import { useAuthStore } from "../../store/auth";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useProfileStyles } from "../../styles/profileScreenStyle";
 import Navbar from "../../component/Navbar";
+import ImmersiveNavScreen from "../../component/ImmersiveNavScreen";
 import { translations } from "../../translations";
 import { logout } from "../../api/auth";
 import axiosClient from "../../api/axiosClient";
@@ -41,6 +42,7 @@ const AccountScreen = () => {
   const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
   const [uploading, setUploading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const borderAnim = useRef(new Animated.Value(0)).current;
   const uploadAnim = useRef(new Animated.Value(0)).current;
 
@@ -64,6 +66,24 @@ const AccountScreen = () => {
 
   const nameFontStyle = useMemo(() => ({ fontFamily: getFontFamily(true) }), [getFontFamily]);
   const regularFontStyle = useMemo(() => ({ fontFamily: getFontFamily(false) }), [getFontFamily]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return;
+      if (profile?.id) return;
+      let cancelled = false;
+      setProfileLoading(true);
+      useAuthStore
+        .getState()
+        .preloadData()
+        .finally(() => {
+          if (!cancelled) setProfileLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [token, profile?.id]),
+  );
 
   useEffect(() => {
     Animated.timing(borderAnim, {
@@ -242,9 +262,7 @@ const AccountScreen = () => {
   }, [pickFromCamera]);
 
   const navigateTo = useCallback((path: string) => {
-    InteractionManager.runAfterInteractions(() => {
-      router.push(path as any);
-    });
+    router.push(path as any);
   }, [router]);
 
   const navIcon = useMemo(() => <MaterialCommunityIcons name="account-circle" size={22} color="#fff" />, []);
@@ -261,21 +279,24 @@ const AccountScreen = () => {
   }), [localPhoto, profile?.photo, imageRefreshKey]);
 
   return (
-    <>
-      <Navbar
-        leftIcon={navIcon}
-        title={t?.accountTab ?? "Account"}
-        firstIcon={refreshIcon}
-        onFirstPress={handleRefresh}
-      />
-
-      <ScrollView 
-        style={styles.container} 
+    <View style={{ flex: 1, backgroundColor: "#F2F4F7" }}>
+      <ImmersiveNavScreen
+        navbar={
+          <Navbar
+            leftIcon={navIcon}
+            title={t?.accountTab ?? "Account"}
+            firstIcon={refreshIcon}
+            onFirstPress={handleRefresh}
+          />
+        }
         contentContainerStyle={[styles.constrainedContainer, { paddingBottom: 10 }]}
-        bounces={true}
-        removeClippedSubviews={true}
-        scrollEventThrottle={16}
-        renderToHardwareTextureAndroid={true}
+        scrollViewProps={{
+          style: styles.container,
+          bounces: true,
+          removeClippedSubviews: true,
+          scrollEventThrottle: 16,
+          renderToHardwareTextureAndroid: true,
+        }}
       >
         <View style={styles.profileHeader}>
           <View style={[styles.avatarWrapper, { borderColor: "#F0F7FF", borderWidth: moderateScale(3), overflow: "visible" }]}>
@@ -290,7 +311,7 @@ const AccountScreen = () => {
                     borderWidth: moderateScale(4),
                     borderColor: "transparent",
                     borderTopColor: "#A5C7FF", 
-                    borderRightColor: "#0B3C8A", 
+                    borderRightColor: "#3D5D96", 
                     transform: [{ rotate: rotateInterpolate }],
                     opacity: opacityInterpolate,
                     zIndex: 0,
@@ -323,7 +344,7 @@ const AccountScreen = () => {
                     borderRadius: scale(60),
                     borderWidth: moderateScale(4),
                     borderColor: "transparent",
-                    borderTopColor: "#0B3C8A", 
+                    borderTopColor: "#3D5D96", 
                     transform: [{ rotate: uploadRotateLeft }],
                     zIndex: 5,
                   }}
@@ -342,9 +363,9 @@ const AccountScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {!profile ? (
+          {!profile && profileLoading ? (
             <View style={{ height: verticalScale(120 * scaleFactor), justifyContent: 'center' }}>
-              <ActivityIndicator color="#0B3C8A" />
+              <ActivityIndicator color="#3D5D96" />
             </View>
           ) : (
             <View style={{ alignItems: "center", width: '100%', paddingHorizontal: scale(20), minHeight: verticalScale(110 * scaleFactor), justifyContent: 'center' }}>
@@ -369,19 +390,11 @@ const AccountScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, nameFontStyle]}>{t?.profileAccount}</Text>
           <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/personalInfoScreen")} activeOpacity={0.6}>
-            <MaterialCommunityIcons name="account-edit" size={20} color="#0B3C8A" />
+            <MaterialCommunityIcons name="account-edit" size={20} color="#3D5D96" />
             <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.updateAccount}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/attachments")} activeOpacity={0.6}>
-            <MaterialCommunityIcons name="file-document" size={20} color="#0B3C8A" />
-            <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.attachmentFile}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/fayidaSection")} activeOpacity={0.6}>
-            <Ionicons name="lock-closed" size={20} color="#0B3C8A" />
-            <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.fayida}</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.item} onPress={openLangModal} activeOpacity={0.6}>
-            <Ionicons name="language" size={20} color="#0B3C8A" />
+            <Ionicons name="language" size={20} color="#3D5D96" />
             <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.languageSettings} : {language}</Text>
           </TouchableOpacity>
         </View>
@@ -389,15 +402,15 @@ const AccountScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, nameFontStyle]}>{t?.promotion}</Text>
           <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/referral")} activeOpacity={0.6}>
-            <MaterialCommunityIcons name="account-group" size={20} color="#0B3C8A" />
+            <MaterialCommunityIcons name="account-group" size={20} color="#3D5D96" />
             <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.referral}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/shareApp")} activeOpacity={0.6}>
-            <Ionicons name="share-social" size={20} color="#0B3C8A" />
+            <Ionicons name="share-social" size={20} color="#3D5D96" />
             <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.share}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/rateApp")} activeOpacity={0.6}>
-            <Ionicons name="star" size={20} color="#0B3C8A" />
+            <Ionicons name="star" size={20} color="#3D5D96" />
             <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.rateApp}</Text>
           </TouchableOpacity>
         </View>
@@ -405,16 +418,8 @@ const AccountScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, nameFontStyle]}>{t?.information}</Text>
           <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/aboutUs")} activeOpacity={0.6}>
-            <Ionicons name="information-circle" size={20} color="#0B3C8A" />
+            <Ionicons name="information-circle" size={20} color="#3D5D96" />
             <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.aboutUs}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/disputeSupport")} activeOpacity={0.6}>
-            <MaterialCommunityIcons name="message-alert" size={20} color="#0B3C8A" />
-            <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.supportDispute}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/successStory")} activeOpacity={0.6}>
-            <MaterialCommunityIcons name="trophy" size={20} color="#0B3C8A" />
-            <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.successStory}</Text>
           </TouchableOpacity>
         </View>
 
@@ -424,7 +429,7 @@ const AccountScreen = () => {
         </TouchableOpacity>
 
         <Text style={[styles.version, regularFontStyle]}>Digital Chereta v1.0.0 (Build 2026)</Text>
-      </ScrollView>
+      </ImmersiveNavScreen>
 
       {/* Photo Picker Modal */}
       <DraggableModal visible={showPhotoModal} onClose={closePhotoModal}>
@@ -433,13 +438,13 @@ const AccountScreen = () => {
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
             <TouchableOpacity style={{ alignItems: 'center' }} onPress={handlePickCameraFromModal}>
               <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center', marginBottom: 10 }}>
-                <Ionicons name="camera" size={32} color="#0B3C8A" />
+                <Ionicons name="camera" size={32} color="#3D5D96" />
               </View>
               <Text style={[regularFontStyle, { color: '#374151' }]}>{t?.fromCamera || "Camera"}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{ alignItems: 'center' }} onPress={handlePickImageFromModal}>
               <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center', marginBottom: 10 }}>
-                <Ionicons name="images" size={32} color="#0B3C8A" />
+                <Ionicons name="images" size={32} color="#3D5D96" />
               </View>
               <Text style={[regularFontStyle, { color: '#374151' }]}>{t?.fromFile || "Gallery"}</Text>
             </TouchableOpacity>
@@ -466,8 +471,8 @@ const AccountScreen = () => {
               }}
               onPress={() => { setLanguage(lang); setShowLangModal(false); }}
             >
-              <Text style={[regularFontStyle, { fontSize: 16, color: language === lang ? "#0B3C8A" : "#374151" }]}>{lang}</Text>
-              {language === lang && <MaterialCommunityIcons name="check-circle" size={20} color="#0B3C8A" />}
+              <Text style={[regularFontStyle, { fontSize: 16, color: language === lang ? "#3D5D96" : "#374151" }]}>{lang}</Text>
+              {language === lang && <MaterialCommunityIcons name="check-circle" size={20} color="#3D5D96" />}
             </TouchableOpacity>
           ))}
         </View>
@@ -510,7 +515,7 @@ const AccountScreen = () => {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
-    </>
+    </View>
   );
 }
 

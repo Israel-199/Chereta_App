@@ -87,14 +87,14 @@ const CategoryItem = ({
   ], [styles.item, scale, opacity, style]);
 
   const videoStyle = useMemo(() => ({ width: '60%', height: '60%' } as const), []);
-  const tintStyle = useMemo(() => (tint ? { tintColor: "#0B3C8A" } : {}), [tint]);
+  const tintStyle = useMemo(() => (tint ? { tintColor: "#8DB048" } : {}), [tint]);
 
   return (
     <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
       <Animated.View style={combinedItemStyle}>
         <View style={styles.iconBox}>
           {isLoading ? (
-            <ActivityIndicator size="small" color="#0B3C8A" style={{ marginVertical: 4 }} />
+            <ActivityIndicator size="small" color="#8DB048" style={{ marginVertical: 4 }} />
           ) : videoSource ? (
             <VideoLoader source={videoSource} style={videoStyle} />
           ) : imageSource ? (
@@ -108,7 +108,7 @@ const CategoryItem = ({
             <MaterialCommunityIcons
               name={iconName ?? "help-circle-outline"}
               size={iconSize}
-              color="#0B3C8A"
+              color="#8DB048"
             />
           )}
           <Text style={[styles.label, labelStyle, textStyle]}>{label}</Text>

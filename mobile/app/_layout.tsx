@@ -19,19 +19,26 @@ import {
   Platform,
   AppState,
   useWindowDimensions,
-  InteractionManager,
 } from "react-native";
 import { Image } from 'expo-image';
 import { useFonts } from "expo-font";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
-import * as Notifications from "expo-notifications";
-import * as NavigationBar from "expo-navigation-bar";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
-import * as ScreenCapture from "expo-screen-capture";
+// import * as ScreenCapture from "expo-screen-capture";
+import { NavigationBar } from "expo-navigation-bar";
 
 import { useAuthStore } from "@/store/auth";
+import { runWhenIdle } from "@/utils/runWhenIdle";
+import {
+  applyAndroidSystemNavigationBar,
+  bindAndroidSystemNavigationBar,
+} from "@/utils/androidSystemBar";
+import { LEMON_GREEN, SCREEN_BG } from "@/constants/theme";
+import { useCheretaCache } from "@/store/cheretaCache";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 import { ErrorBoundary } from "@/component/ErrorBoundary";
 import { translations } from "../translations";
 
@@ -45,23 +52,11 @@ export const queryClient = new QueryClient({
 });
 
 if (Platform.OS === "android") {
-  SystemUI.setBackgroundColorAsync("#000000").catch(() => {});
-  NavigationBar.setBackgroundColorAsync("#000000").catch(() => {}); 
-  NavigationBar.setButtonStyleAsync("light").catch(() => {});
-  NavigationBar.setPositionAsync("absolute").catch(() => {});
-  NavigationBar.setBehaviorAsync("inset-touch").catch(() => {});
-  NavigationBar.setVisibilityAsync("always" as any).catch(() => {});
+  SystemUI.setBackgroundColorAsync(SCREEN_BG).catch(() => {});
+  applyAndroidSystemNavigationBar();
 }
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+
 
 import { useSegments } from "expo-router";
 
@@ -89,7 +84,7 @@ const ProfessionalToast = memo(({ children, scaleFactor }: { children: React.Rea
       }),
       Animated.timing(opacityAnim, {
         toValue: 1,
-        duration: 800, 
+        duration: 280,
         useNativeDriver: true,
       }),
       Animated.spring(translateY, {
@@ -247,7 +242,7 @@ const AppContent = memo(() => {
         const pollInterval = 10000;
 
         interval = setInterval(() => {
-          InteractionManager.runAfterInteractions(() => {
+          runWhenIdle(() => {
             if (appState.current === 'active') {
               quickCheckStatus().catch(() => {});
             }
@@ -301,23 +296,22 @@ const AppContent = memo(() => {
   }, [isConnected, slideAnim, fadeAnim, scaleAnim]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#000000", paddingBottom: Platform.OS === 'android' ? insets.bottom : 0 }}>
-      <StatusBar style="light" />
-      <View style={{ 
-        flex: 1, 
-        backgroundColor: "#ffffff",
-      }}>
+    <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
+      {Platform.OS === "android" && <NavigationBar style="dark" hidden={false} />}
+      {/* @ts-ignore */}
+      <StatusBar style="light" backgroundColor={LEMON_GREEN} translucent={Platform.OS === "android"} />
+      <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
       <Stack
         screenOptions={{
           headerShown: false,
           animation: "slide_from_right",
           presentation: "card",
-          contentStyle: { backgroundColor: "#ffffff" },
+          contentStyle: { backgroundColor: "#F2F4F7" },
         }}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen name="screen" />
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(tabs)" options={{ animation: "none" }} />
+        <Stack.Screen name="screen" options={{ animation: "slide_from_right" }} />
       </Stack>
 
       <Toast 
@@ -350,49 +344,38 @@ const AppContent = memo(() => {
 });
 
 function RootContent({ fontsLoaded }: { fontsLoaded: boolean }) {
-  const [appReady, setAppReady] = useState(false);
   const preloadData = useAuthStore((state) => state.preloadData);
+  const token = useAuthStore((state) => state.token);
+
+  useEffect(() => bindAndroidSystemNavigationBar(), []);
 
   useEffect(() => {
-    ScreenCapture.preventScreenCaptureAsync().catch(() => {});
-    return () => {
-      ScreenCapture.allowScreenCaptureAsync().catch(() => {});
-    };
-  }, []);
+    if (!fontsLoaded) return;
+    SplashScreen.hideAsync().catch(() => {});
+    useCheretaCache.getState().prefetchTabs(token);
+    runWhenIdle(() => preloadData().catch(() => {}));
+  }, [fontsLoaded, preloadData, token]);
 
   useEffect(() => {
-    async function prepare() {
-      if (fontsLoaded) {
-        try {
-          const { useEqubTypesStore } = require("../store/equbTypesStore");
-          await Promise.all([
-            preloadData(),
-            useEqubTypesStore.getState().loadAvailableTypes(),
-          ]);
-        } catch (e) {
-          console.warn("Preload failed", e);
-        } finally {
-          setAppReady(true);
-        }
-      }
+    if (token) {
+      useCheretaCache.getState().prefetchTabs(token);
     }
-    prepare();
-  }, [fontsLoaded, preloadData]);
+  }, [token]);
 
-  const onLayoutRootView = useCallback(async () => {
-    if (appReady) {
-      await SplashScreen.hideAsync();
-    }
-  }, [appReady]);
+  const onLayoutRootView = useCallback(() => {
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded]);
 
-  if (!appReady) {
-    return null;
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#ffffff" }} onLayout={onLayoutRootView} />
+    );
   }
 
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
-        <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <View style={{ flex: 1, backgroundColor: SCREEN_BG }} onLayout={onLayoutRootView}>
           <AppContent />
         </View>
       </ErrorBoundary>
@@ -407,22 +390,6 @@ export default function RootLayout() {
     "NotoSansEthiopic-Regular": require("../assets/fonts/NotoSansEthiopic-Regular.ttf"),
     "NotoSansEthiopic-Bold": require("../assets/fonts/NotoSansEthiopic-Bold.ttf"),
   });
-
-  useEffect(() => {
-    const setNavBar = async () => {
-      if (Platform.OS !== "android") return;
-      try {
-        await NavigationBar.setBackgroundColorAsync("#000000");
-        await NavigationBar.setButtonStyleAsync("light");
-        await NavigationBar.setPositionAsync("absolute");
-        await NavigationBar.setBehaviorAsync("inset-touch");
-        await NavigationBar.setVisibilityAsync("always" as any);
-      } catch (error) {
-        console.warn("Failed to set navigation bar configuration:", error);
-      }
-    };
-    setNavBar();
-  }, []);
 
   return (
     <SafeAreaProvider>

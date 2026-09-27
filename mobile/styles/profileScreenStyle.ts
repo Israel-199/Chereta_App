@@ -42,7 +42,7 @@ export const useProfileStyles = () => {
         borderColor: "#F0F7FF",
         backgroundColor: "#fff",
         elevation: 8,
-        shadowColor: "#0B3C8A",
+        shadowColor: "#3D5D96",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 10,
@@ -55,7 +55,7 @@ export const useProfileStyles = () => {
         position: "absolute",
         bottom: moderateScale(2 * scaleFactor),
         right: moderateScale(2 * scaleFactor),
-        backgroundColor: "#0B3C8A",
+        backgroundColor: "#3D5D96",
         borderRadius: moderateScale(25 * scaleFactor),
         padding: scale(8 * scaleFactor),
         borderWidth: 3,
@@ -68,7 +68,7 @@ export const useProfileStyles = () => {
       },
       profileName: {
         fontSize: rs(18),
-        color: "#0B3C8A",
+        color: "#3D5D96",
         textAlign: "center",
         marginTop: verticalScale(5 * scaleFactor),
         lineHeight: rs(22),
@@ -82,7 +82,7 @@ export const useProfileStyles = () => {
       },
       memberBadge: {
         marginTop: verticalScale(7 * scaleFactor),
-        color: "#0B3C8A",
+        color: "#3D5D96",
       },
 
       section: {
@@ -96,7 +96,7 @@ export const useProfileStyles = () => {
       sectionTitle: {
         fontSize: rs(14),
         marginBottom: verticalScale(10 * scaleFactor),
-        color: "#0B3C8A",
+        color: "#3D5D96",
         lineHeight: rs(18),
       },
       profileLevel: {

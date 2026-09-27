@@ -25,7 +25,7 @@ export const usePersonalInfoStyles = () => {
       fontSize: scaleFont(18),
       marginBottom: verticalScale(baseSpacing * 1.5),
       textAlign: "center",
-      color: "#0B3C8A",
+      color: "#8DB048",
     },
     sectionTitle: {
       fontSize: scaleFont(18),
@@ -49,7 +49,7 @@ export const usePersonalInfoStyles = () => {
       marginBottom: verticalScale(baseSpacing * 0.4),
     },
     button: {
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#8DB048",
       height: verticalScale(50 * scaleFactor),
       justifyContent: "center",
       borderRadius: moderateScale(8 * scaleFactor),

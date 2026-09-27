@@ -29,7 +29,7 @@ import {
 import { Keyboard } from "react-native";
 import Navbar from "@/component/Navbar";
 import { translations } from "@/translations";
-import * as Notifications from "expo-notifications";
+import { useCheretaCache } from "@/store/cheretaCache";
 
 function normalizePhone(raw: string) {
   let p = raw.trim();
@@ -94,15 +94,16 @@ const verifyOtpMutation = useMutation({
     const normalizedPhone = normalizePhone(phone);
     return verifyOtp(normalizedPhone, otpValue, "device-123");
   },
-  onSuccess: (data) => {
+  onSuccess: async (data) => {
     if (data.token) {
       setToken(data.token);
+      useCheretaCache.getState().prefetchTabs(data.token);
     }
 
     if (data.needsProfileCompletion) {
       router.push("/screen/registerScreen");
     } else {
-      router.replace("/account");
+      router.replace("/(tabs)/home");
     }
 
     if (data.messageKey) {
@@ -131,17 +132,6 @@ const resendOtpMutation = useMutation({
   onSuccess: async (data) => {
     if (data.code) {
       setTimer(59);
-      try {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: translations[language].otpVerification || "Your OTP Code",
-            body: `${translations[language].otpSent || "Code"}: ${data.code}`,
-          },
-          trigger: null,
-        });
-      } catch (error) {
-        console.error("Resend notification failed:", error);
-      }
       Alert.alert(
         translations[language].otpVerification || "Your OTP Code",
         `${translations[language].otpSent || "Code"}: ${data.code}`,
@@ -256,7 +246,7 @@ const resendOtpMutation = useMutation({
                     { fontFamily: getFontFamily(false) },
                     language === lang && {
                       fontWeight: "700",
-                      color: "#0B3C8A",
+                      color: "#8DB048",
                     },
                   ]}
                 >

@@ -20,6 +20,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { translations } from "@/translations";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "expo-router";
+import { completeProfile } from "@/api/auth";
 import SkeletonLoader from "@/component/SkeletonLoader";
 import { IOSLoader } from "@/component/ButtonLoadingEffect";
 import { verticalScale, moderateScale } from "react-native-size-matters";
@@ -132,19 +133,9 @@ const RegisterScreen = () => {
 
     setSaving(true);
     try {
-      const meRes = await axiosClient.get("/user/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const userId = meRes.data.id;
+      await completeProfile(form);
 
-      await axiosClient.post(
-        "/user/complete-profile",
-        { userId, ...form },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      await useAuthStore.getState().preloadData();
-      router.replace("/home");
+      router.replace("/(tabs)/home");
 
       setTimeout(() => {
         Toast.show({

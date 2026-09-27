@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNotificationStore, NotificationItem } from "@/store/notificationStore";
 import { useRouter } from "expo-router";
 import Navbar from "../../component/Navbar";
+import ImmersiveNavScreen from "../../component/ImmersiveNavScreen";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/auth";
 import { translations } from "../../translations";
@@ -90,7 +91,7 @@ const NotificationCard = memo(({
         }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Text style={{ fontFamily: getFontFamily(true), fontSize: 16, color: '#0B3C8A', flex: 1 }} numberOfLines={1}>
+          <Text style={{ fontFamily: getFontFamily(true), fontSize: 16, color: '#8DB048', flex: 1 }} numberOfLines={1}>
             {item.title}
           </Text>
           <Text style={{ fontFamily: getFontFamily(), fontSize: 12, color: '#888' }}>{item.date}</Text>
@@ -169,14 +170,18 @@ export default function NotificationsScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#F2F4F7" }}>
-      <Navbar
-        leftIcon={leftIcon}
-        title={t?.notifications || "Notifications"}
-        onLeftPress={handleBack}
-        secondIcon={secondIconStyle}
-        onSecondPress={() => setShowClearConfirm(true)}
-      />
-
+      <ImmersiveNavScreen
+        scroll={false}
+        navbar={
+          <Navbar
+            leftIcon={leftIcon}
+            title={t?.notifications || "Notifications"}
+            onLeftPress={handleBack}
+            secondIcon={secondIconStyle}
+            onSecondPress={() => setShowClearConfirm(true)}
+          />
+        }
+      >
       {notifications.length === 0 ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
           <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
@@ -216,13 +221,15 @@ export default function NotificationsScreen() {
         </View>
       )}
 
+      </ImmersiveNavScreen>
+
       {/* Details Modal */}
       <DraggableModal
         visible={!!selectedNotification}
         onClose={closeModal}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={{ fontFamily: getFontFamily(true), fontSize: 20, color: '#0B3C8A', flex: 1 }}>
+          <Text style={{ fontFamily: getFontFamily(true), fontSize: 20, color: '#8DB048', flex: 1 }}>
             {selectedNotification?.title}
           </Text>
           <TouchableOpacity onPress={closeModal} style={{ padding: 4, backgroundColor: '#F1F5F9', borderRadius: 20 }}>
@@ -256,7 +263,7 @@ export default function NotificationsScreen() {
             <Text style={{ fontFamily: getFontFamily(true), fontSize: 14, color: '#475569', width: 60 }}>
               ID
             </Text>
-            <Text style={{ fontFamily: getFontFamily(), fontSize: 14, color: '#0B3C8A', flex: 1 }}>
+            <Text style={{ fontFamily: getFontFamily(), fontSize: 14, color: '#8DB048', flex: 1 }}>
               #{selectedNotification?.trackInfo}
             </Text>
           </View>

@@ -1,4 +1,5 @@
 import { Tabs, useSegments } from "expo-router";
+import { NavigationBar } from "expo-navigation-bar";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import React, { useMemo, useRef, useCallback, useEffect } from "react";
@@ -11,11 +12,12 @@ import {
   View,
   useWindowDimensions,
   Platform,
-  TouchableWithoutFeedback,
 } from "react-native";
 import { useNotificationStore } from "../../store/notificationStore";
 import api from "../../api/axiosClient";
 import { StatusBar } from "expo-status-bar";
+import { TAB_BAR_WHITE, TAB_ACTIVE_BLUE, LEMON_GREEN } from "../../constants/theme";
+import { runWhenIdle } from "../../utils/runWhenIdle";
 
 const TAB_COUNT = 4;
 
@@ -25,12 +27,6 @@ const TabIcon = ({ name, type, color, size }: { name: string, type: 'mc' | 'fa',
 };
 
 const MemoTabIcon = React.memo(TabIcon);
-
-const CustomTabButton = (props: any) => (
-  <TouchableWithoutFeedback onPress={props.onPress}>
-    <View style={props.style}>{props.children}</View>
-  </TouchableWithoutFeedback>
-);
 
 const TabsLayout = () => {
   const language = useAuthStore((state) => state.language);
@@ -57,7 +53,10 @@ const TabsLayout = () => {
     }).start();
   }, [translateX, TAB_WIDTH]);
 
+  const token = useAuthStore((state) => state.token);
+
   useEffect(() => {
+    if (!token) return;
     const fetchNotifications = async () => {
       try {
         const response = await api.get('/user/notifications');
@@ -75,19 +74,23 @@ const TabsLayout = () => {
           };
         });
         useNotificationStore.getState().setNotifications(notifs);
-      } catch (err) {
-        console.error("Failed to sync notifications", err);
+      } catch (err: any) {
+        if (err?.response?.status !== 401) {
+          console.warn("Failed to sync notifications", err?.message || err);
+        }
       }
     };
-    fetchNotifications();
-  }, []);
+    runWhenIdle(() => {
+      fetchNotifications();
+    });
+  }, [token]);
 
   useEffect(() => {
     const tabName = segments[segments.length - 1];
     const tabIndices: Record<string, number> = {
       "home": 0,
-      "myequbs": 1,
-      "payment": 2,
+      "mychereta": 1,
+      "winner": 2,
       "account": 3
     };
     if (tabName && tabIndices[tabName] !== undefined) {
@@ -99,22 +102,20 @@ const TabsLayout = () => {
     headerShown: false,
     animation: "none" as any,
     lazy: false,
-    freezeOnBlur: false,
-    detachInactiveScreens: false,
     tabBarHideOnKeyboard: false,
-    sceneContainerStyle: { backgroundColor: "#ffffff" },
+    sceneContainerStyle: { backgroundColor: "#F2F4F7" },
     tabBarStyle: {
-      backgroundColor: "#ffffff",
-      borderTopWidth: 0,
+      backgroundColor: TAB_BAR_WHITE,
+      borderTopWidth: 1,
+      borderTopColor: "#E5E7EB",
       height: TAB_BAR_HEIGHT,
-      paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
+      paddingBottom: Platform.OS === "ios" ? insets.bottom : 0,
       paddingTop: 6,
-      elevation: Platform.OS === "android" ? 8 : 0,
+      elevation: Platform.OS === "android" ? 12 : 0,
       shadowColor: "#000",
-      shadowOpacity: 0.05,
+      shadowOpacity: 0.2,
       shadowRadius: 4,
     },
-    tabBarButton: (props: any) => <CustomTabButton {...props} />,
     tabBarLabelStyle: {
       fontSize: 12 * scaleFactor,
       fontWeight: "600" as any,
@@ -123,35 +124,37 @@ const TabsLayout = () => {
         ? typography.amharicRegular?.fontFamily 
         : typography.englishRegular?.fontFamily,
     } as any,
-    tabBarActiveTintColor: "#0B3C8A",
-    tabBarInactiveTintColor: "#506280",
+    tabBarActiveTintColor: LEMON_GREEN,
+    tabBarInactiveTintColor: "#6B7280",
   }), [TAB_BAR_HEIGHT, insets.bottom, scaleFactor, language]);
 
-  const homeIcon = useCallback(({ color, size }: { color: string, size: number }) => (
+  const homeIcon = useCallback(({ color, size }: { color: any, size: number }) => (
     <MemoTabIcon type="mc" name="home" size={size} color={color} />
   ), []);
-  const equbsIcon = useCallback(({ color, size }: { color: string, size: number }) => (
-    <MemoTabIcon type="mc" name="sync" size={size} color={color} />
+  const myCheretaIcon = useCallback(({ color, size }: { color: any, size: number }) => (
+    <MemoTabIcon type="mc" name="gavel" size={size} color={color} />
   ), []);
-  const paymentIcon = useCallback(({ color }: { color: string }) => (
-    <MemoTabIcon type="fa" name="money-bills" size={19} color={color} />
+  const winnerIcon = useCallback(({ color, size }: { color: any, size: number }) => (
+    <MemoTabIcon type="mc" name="trophy" size={size} color={color} />
   ), []);
-  const accountIcon = useCallback(({ color, size }: { color: string, size: number }) => (
+  const accountIcon = useCallback(({ color, size }: { color: any, size: number }) => (
     <MemoTabIcon type="mc" name="account" size={size} color={color} />
   ), []);
 
   const homeListeners = useMemo(() => ({}), []);
-  const equbsListeners = useMemo(() => ({}), []);
-  const paymentListeners = useMemo(() => ({}), []);
+  const myCheretaListeners = useMemo(() => ({}), []);
+  const winnerListeners = useMemo(() => ({}), []);
   const accountListeners = useMemo(() => ({}), []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
-      <StatusBar style="light" backgroundColor="#0B3C8A" />
+    <View style={{ flex: 1, backgroundColor: "#F2F4F7" }}>
+      {Platform.OS === "android" && <NavigationBar style="dark" hidden={false} />}
+      {/* @ts-ignore */}
+      <StatusBar style="light" backgroundColor={LEMON_GREEN} translucent={Platform.OS === "android"} />
       <Tabs screenOptions={screenOptions}>
-        <Tabs.Screen name="home" listeners={homeListeners} options={{ title: t.homeTab, tabBarIcon: homeIcon }} />
-        <Tabs.Screen name="myequbs" listeners={equbsListeners} options={{ title: t.myEqubsTab, tabBarIcon: equbsIcon }} />
-        <Tabs.Screen name="payment" listeners={paymentListeners} options={{ title: t.paymentTab, tabBarIcon: paymentIcon }} />
+        <Tabs.Screen name="home" listeners={homeListeners} options={{ title: t.homeTab, tabBarIcon: homeIcon, lazy: false }} />
+        <Tabs.Screen name="mychereta" listeners={myCheretaListeners} options={{ title: t.myChereta || "My Chereta", tabBarIcon: myCheretaIcon, lazy: false }} />
+        <Tabs.Screen name="winner" listeners={winnerListeners} options={{ title: t.winners || "Winners", tabBarIcon: winnerIcon, lazy: false }} />
         <Tabs.Screen name="account" listeners={accountListeners} options={{ title: t.accountTab, tabBarIcon: accountIcon }} />
       </Tabs>
       <Animated.View
@@ -162,7 +165,7 @@ const TabsLayout = () => {
           left: 0,
           width: TAB_WIDTH,
           height: 3,
-          backgroundColor: "#22C55E",
+          backgroundColor: TAB_ACTIVE_BLUE,
           transform: [{ translateX }],
         }}
       />

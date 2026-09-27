@@ -65,7 +65,7 @@ export const useComingSoonStyles = () => {
     },
     timeValue: {
       fontSize: rs(20),
-      color: "#0B3C8A",
+      color: "#8DB048",
     },
     timeLabel: {
       fontSize: rs(12),

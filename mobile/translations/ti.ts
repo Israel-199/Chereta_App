@@ -48,7 +48,7 @@ export default {
   equbJoinedTab: "ኣተሓሓዙ እቁብ",
   accountTab: "ኣካውንት",
 
-  footerRights: "© 2026 ሓበሻ እቁብ፡ ኩሉ መብት ተጠቒሙ።",
+  footerRights: "© 2026 ዲጂታል ጨረታ። ኩሎም መሰላት ብሕጊ ዝተሓለዉ እዮም።",
 
   notificationJoin: "ዝኸበርካ {username}፣ {equbname} ብምጽንባርካ ነመስግን። በጃኹም ክፍሊት ብምኽፋል እቁብኩም ጀምሩ።",
   notificationLeave: "ዝኸበርካ {username}፣ ካብ {equbname} ወጺእካ ኣለኻ።",
@@ -357,4 +357,14 @@ export default {
   winnerNumber: "ናይ ተዓዋቲ ቑፅሪ",
   equbNumber: "ናይ እቁብ ቑፅሪ #",
   drawDateTitle: "ሰሙናዊ ናይ ሰንበት ዕጫ ምውፃእ",
+  enterBidAmountLabel: "ዋጋ ጨረታ ኣእትዉ",
+  resultsCelebrationTitle: "እንቋዕ ደስ በለካ!",
+  appName: "ዲጂታል ቸሬታ",
+  submitBid: "ጨረታ ኣእትዉ",
+  viewMore: "ተወሳኺ ርአ",
+  viewResults: "ውጽኢት ርአ",
+  auctionCode: "ኮድ ጨረታ",
+  bidsLabel: "ጨረታታት",
+  myChereta: "ቸሬታይ",
+  winners: "ተዓወትቲ",
 };

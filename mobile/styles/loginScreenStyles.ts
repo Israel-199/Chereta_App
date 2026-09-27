@@ -16,7 +16,7 @@ export const useLoginScreenStyles = () => {
 
   return StyleSheet.create({
     navbarContainer: {
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#3D5D96",
     },
 
     navbar: {
@@ -25,7 +25,7 @@ export const useLoginScreenStyles = () => {
       justifyContent: "space-between",
       alignItems: "center",
       paddingHorizontal: scale(16 * scaleFactor),
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#3D5D96",
     },
 
 
@@ -69,7 +69,7 @@ export const useLoginScreenStyles = () => {
     },
     title: {
       fontSize: rs(22),
-      color: "#0B3C8A",
+      color: "#3D5D96",
       textAlign: "center",
       marginTop: verticalScale(5 * scaleFactor),
       paddingHorizontal: scale(5 * scaleFactor),
@@ -133,7 +133,7 @@ export const useLoginScreenStyles = () => {
       flexDirection: "row",
       justifyContent: "center",
       gap: scale(10 * scaleFactor),
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#3D5D96",
       height: verticalScale((isTablet ? 50 : 44) * scaleFactor),
       borderRadius: moderateScale(12 * scaleFactor),
       alignItems: "center",
@@ -142,7 +142,7 @@ export const useLoginScreenStyles = () => {
       width: "90%",
       maxWidth: 400,
       alignSelf: "center",
-      shadowColor: "#0B3C8A",
+      shadowColor: "#3D5D96",
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -172,7 +172,7 @@ export const useLoginScreenStyles = () => {
       lineHeight: rs(18),
     },
     link: {
-      color: "#0B3C8A",
+      color: "#3D5D96",
       fontWeight: "700",
     },
     dropdownOverlay: {

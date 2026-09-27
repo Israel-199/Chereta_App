@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { zustandStorage } from "./storage";
 import { getProfile } from "../api/auth";
-import { getMyEqubs } from "../api/equbSevice";
 import { useNotificationStore } from "./notificationStore";
 import { translations } from "../translations";
 
@@ -52,21 +51,17 @@ export const useAuthStore = create<AuthState>()(
         const token = get().token;
         if (!token) return;
         try {
-          const [profileRes, equbsRes] = await Promise.allSettled([
-            getProfile(),
-            getMyEqubs()
-          ]);
-
-          const profile = profileRes.status === "fulfilled" ? profileRes.value : get().profile;
-          const myEqubs = equbsRes.status === "fulfilled" ? equbsRes.value : get().myEqubs;
-
-          set({ 
-            profile, 
-            myEqubs,
-            attachments: profile?.attachments || [] 
+          const profile = await getProfile();
+          set({
+            profile,
+            myEqubs: [],
+            attachments: profile?.attachments || [],
           });
-        } catch (err) {
-          console.error("Preload error:", err);
+        } catch (err: any) {
+          const status = err?.response?.status;
+          if (status !== 401) {
+            console.warn("Preload error:", err?.message || err);
+          }
         }
       },
       quickCheckStatus: async () => {
@@ -100,9 +95,10 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       storage: zustandStorage,
-      partialize: (state) => ({ 
-        token: state.token, 
-        language: state.language 
+      partialize: (state) => ({
+        token: state.token,
+        language: state.language,
+        profile: state.profile,
       }),
     },
   ),

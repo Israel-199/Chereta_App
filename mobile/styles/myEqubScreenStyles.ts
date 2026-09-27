@@ -86,7 +86,7 @@ export const useMyEqubsScreenStyles = () => {
     },
 
     activeDot: {
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#8DB048",
       width: rs(12), // Slightly longer active dot
     },
 
@@ -178,7 +178,7 @@ export const useMyEqubsScreenStyles = () => {
       borderRadius: moderateScale(100),
       padding: scale(30),
       marginBottom: verticalScale(20),
-      shadowColor: "#0B3C8A",
+      shadowColor: "#8DB048",
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.1,
       shadowRadius: 15,
@@ -203,12 +203,12 @@ export const useMyEqubsScreenStyles = () => {
     },
 
     ctaButton: {
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#8DB048",
       paddingVertical: verticalScale(12),
       paddingHorizontal: scale(baseSpacing * 1.5),
       borderRadius: moderateScale(12),
       width: "80%",
-      shadowColor: "#0B3C8A",
+      shadowColor: "#8DB048",
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,

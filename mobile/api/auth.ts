@@ -48,8 +48,24 @@ export async function completeProfile(data: {
   const token = useAuthStore.getState().token;
   if (!token) throw new Error("No token available");
 
-  const res = await axiosClient.post("/user/complete-profile", data, {
-    headers: { Authorization: `Bearer ${token}` },
+  const formData = new FormData();
+  formData.append("firstName", data.firstName);
+  formData.append("lastName", data.lastName);
+  formData.append("gender", data.gender);
+  formData.append("address", data.address);
+  if (data.photo) {
+    formData.append("photo", {
+      uri: data.photo,
+      type: "image/jpeg",
+      name: "profile.jpg",
+    } as any);
+  }
+
+  const res = await axiosClient.post("/user/complete-profile", formData, {
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "multipart/form-data",
+    },
   });
 
   queryClient.clear();

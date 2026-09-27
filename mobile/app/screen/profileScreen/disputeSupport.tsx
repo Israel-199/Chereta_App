@@ -12,8 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useAuthStore } from "@/store/auth";
 import { createSupportTicket, getMySupportTickets, deleteSupportTicket } from "@/api/supportService";
 import SkeletonLoader from "@/component/SkeletonLoader";
@@ -162,7 +161,7 @@ export default function DisputeSupportScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0B3C8A" colors={["#0B3C8A"]} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8DB048" colors={["#8DB048"]} />
         }
       >
         {/* Toggle Form Button */}
@@ -280,7 +279,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   newTicketButton: {
-    backgroundColor: "#0B3C8A",
+    backgroundColor: "#8DB048",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -290,7 +289,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     ...Platform.select({
       ios: {
-        shadowColor: "#0B3C8A",
+        shadowColor: "#8DB048",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -361,7 +360,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   submitButton: {
-    backgroundColor: "#0B3C8A",
+    backgroundColor: "#8DB048",
     borderRadius: 12,
     height: 56,
     justifyContent: "center",

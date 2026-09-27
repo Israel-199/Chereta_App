@@ -50,7 +50,7 @@ export const useCategoryItemStyles = (size: "small" | "medium" | "large" = "medi
       borderWidth: 1,
       borderColor: "#F0F3F7",
       
-      shadowColor: "#0B3C8A",
+      shadowColor: "#8DB048",
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.12,
       shadowRadius: 6,

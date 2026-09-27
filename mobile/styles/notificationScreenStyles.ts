@@ -19,7 +19,7 @@ export const useNotificationStyles = () => {
     header: {
       fontSize: rs(20),
       fontWeight: "700",
-      color: "#0B3C8A",
+      color: "#8DB048",
       marginBottom: verticalScale(12 * scaleFactor),
       textAlign: "center",
     },

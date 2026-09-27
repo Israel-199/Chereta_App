@@ -41,10 +41,10 @@ export default function AboutUsScreen() {
           left: 0,
           right: 0,
           height: 350, 
-          backgroundColor: "#0B3C8A",
+          backgroundColor: "#8DB048",
         }}
       />
-      <StatusBar barStyle="light-content" backgroundColor="#0B3C8A" translucent />
+      <StatusBar barStyle="light-content" backgroundColor="#8DB048" translucent />
       <Navbar
         leftIcon={
           <MaterialCommunityIcons
@@ -63,7 +63,7 @@ export default function AboutUsScreen() {
         style={{ backgroundColor: "transparent" }} 
       >
         {/* Background extension for top-overscroll on iOS/Android (Internal to Scroll) */}
-        <View style={{ height: 1000, backgroundColor: "#0B3C8A", position: "absolute", top: -1000, left: 0, right: 0 }} />
+        <View style={{ height: 1000, backgroundColor: "#8DB048", position: "absolute", top: -1000, left: 0, right: 0 }} />
 
         {/* HERO SECTION */}
         <View style={styles.heroSection}>
@@ -87,7 +87,7 @@ export default function AboutUsScreen() {
           {/* OUR STORY / ABOUT US SECTION */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <MaterialCommunityIcons name="information" size={24} color="#0B3C8A" />
+              <MaterialCommunityIcons name="information" size={24} color="#8DB048" />
               <Text style={[styles.cardTitle, { fontFamily: getFontFamily(true) }]}>
                 {t.ourStory || "Our Story"}
               </Text>
@@ -101,7 +101,7 @@ export default function AboutUsScreen() {
           <View style={styles.row}>
             <View style={[styles.card, styles.smallCard]}>
               <View style={styles.iconCircle}>
-                <MaterialCommunityIcons name="target" size={30} color="#0B3C8A" />
+                <MaterialCommunityIcons name="target" size={30} color="#8DB048" />
               </View>
               <Text style={[styles.cardTitleSmall, { fontFamily: getFontFamily(true) }]}>
                 {t.mission || "Mission"}
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   heroSection: {
     alignItems: "center",
     paddingVertical: 50,
-    backgroundColor: "#0B3C8A",
+    backgroundColor: "#8DB048",
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
   },

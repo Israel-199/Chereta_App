@@ -1,346 +1,563 @@
-import {
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { Modal, 
   Text,
   View,
   TouchableOpacity,
   ScrollView,
   RefreshControl,
   useWindowDimensions,
-  InteractionManager,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
-import { Image } from 'expo-image';
+import { Image } from "expo-image";
 import Navbar from "../../component/Navbar";
+import ImmersiveNavScreen from "../../component/ImmersiveNavScreen";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import CategoryItem from "../../component/CategoryItem";
-import { typography } from "../../styles/typography";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useAuthStore } from "../../store/auth";
-import { useEqubTypesStore } from "../../store/equbTypesStore";
 import { translations } from "../../translations";
-import React, { useState, useRef, useEffect, useMemo, useCallback, memo } from "react";
-
-import SkeletonLoader from "../../component/SkeletonLoader";
-import SkeletonEqubGrid from "../../component/SkeletonEqubGrids";
-import SuspendedScreen from "../../component/SuspendedScreen";
-
 import { useHomeScreenStyles, useHomeUIStyles } from "../../styles/homeScreenStyles";
+import { AuctionItem } from "../../api/chereta";
+import { resolveAuctionImage } from "../../utils/auctionMedia";
+import { formatCountdown, isAuctionEnded } from "../../utils/countdown";
+import { StatusBar } from "expo-status-bar";
+import { useLocalizedTypography } from "../../utils/useLocalizedTypography";
+import CheretaTermsModal from "../../component/CheretaTermsModal";
+import { placeBidWithTerms } from "../../utils/placeBidFlow";
+import { useCheretaStore } from "../../store/cheretaStore";
+import { useCheretaCache } from "../../store/cheretaCache";
+import Toast from "react-native-toast-message";
+import { LEMON_GREEN, CH_SUBMIT_GREEN, CH_VIEW_MORE_BLUE, CH_TIMER_RED, CH_SUBMIT_GREEN_DARK } from "../../constants/theme";
+import CheretaBidInput from "../../component/CheretaBidInput";
+import CheretaSectionHeader from "../../component/CheretaSectionHeader";
+import { formatAuctionCodeDisplay } from "../../utils/formatAuctionCode";
 
-const promoImages = [
-  require("../../assets/images/carousel_1.jpg"),
-  require("../../assets/images/carousel_2.jpg"),
-  require("../../assets/images/carousel_3.jpg"),
-];
 
-const adImageSource = require("../../assets/images/graphics.jpg");
 
-const dailyIcon = require("../../assets/images/icons/payment-method.png");
-const weeklyIcon = require("../../assets/images/icons/weekly.png");
-const monthlyIcon = require("../../assets/images/icons/monthly.png");
-const vehicleIcon = require("../../assets/images/icons/electric-car.png");
-const houseIcon = require("../../assets/images/icons/buy-home.png");
-const phoneIcon = require("../../assets/images/icons/smartphone.png");
-const refrigeratorIcon = require("../../assets/images/icons/Refrigrator.png");
-const tvIcon = require("../../assets/images/icons/Tv.png");
-const sofaIcon = require("../../assets/images/icons/Sofa.png");
-
-const VEHICLE_STYLE = { transform: [{ scale: 2.0 }] };
-const HOUSE_STYLE = { transform: [{ scale: 1.5 }] };
-const PHONE_STYLE = { transform: [{ scale: 1.8 }] };
-const REFRIGERATOR_STYLE = { transform: [{ scale: 1.5 }] };
-const TV_STYLE = { transform: [{ scale: 1.5 }] };
-const SOFA_STYLE = { transform: [{ scale: 1.5 }] };
-
-const EQUB_TYPE_CONFIG: Record<string, {
-  icon: any;
-  labelKey: string;
-  fallbackLabel: string;
-  route: string;
-  imageStyle?: any;
-  tint?: boolean;
-  category: "standard" | "property" | "appliance";
-}> = {
-  DAILY: { icon: dailyIcon, labelKey: "dailyEqub", fallbackLabel: "Daily", route: "/screen/dailyEqubList", category: "standard", tint: true },
-  WEEKLY: { icon: weeklyIcon, labelKey: "weeklyEqub", fallbackLabel: "Weekly", route: "/screen/weeklyEqubList", category: "standard", tint: true },
-  MONTHLY: { icon: monthlyIcon, labelKey: "monthlyEqub", fallbackLabel: "Monthly", route: "/screen/monthlyEqubList", category: "standard", tint: true },
-  VEHICLE: { icon: vehicleIcon, labelKey: "vehicleEqub", fallbackLabel: "Vehicle", route: "/screen/equbRegistration?type=VEHICLE", imageStyle: VEHICLE_STYLE, category: "property" },
-  HOUSE: { icon: houseIcon, labelKey: "houseEqub", fallbackLabel: "House", route: "/screen/equbRegistration?type=HOUSE", imageStyle: HOUSE_STYLE, category: "property" },
-  PHONE: { icon: phoneIcon, labelKey: "phoneEqub", fallbackLabel: "Phone", route: "/screen/phoneEqubList", imageStyle: PHONE_STYLE, category: "property" },
-  TV: { icon: tvIcon, labelKey: "tvEqub", fallbackLabel: "TV Equb", route: "/screen/phoneEqubList?type=tv", imageStyle: TV_STYLE, category: "appliance" },
-  REFRIGERATOR: { icon: refrigeratorIcon, labelKey: "refrigeratorEqub", fallbackLabel: "Refrigerator Equb", route: "/screen/phoneEqubList?type=refrigerator", imageStyle: REFRIGERATOR_STYLE, category: "appliance" },
-  SOFA: { icon: sofaIcon, labelKey: "sofaEqub", fallbackLabel: "Sofa Equb", route: "/screen/phoneEqubList?type=sofa", imageStyle: SOFA_STYLE, category: "appliance" },
+type CarouselProps = {
+  title: string;
+  subtitle?: string;
+  sectionIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
+  data: AuctionItem[];
+  width: number;
+  router: ReturnType<typeof useRouter>;
+  serverOffset: number;
+  tick: number;
+  t: Record<string, string>;
+  language: string;
+  token: string | null;
+  onBidPlaced: () => void;
+  onAuctionsPatch: (id: string, patch: Partial<AuctionItem>) => void;
 };
 
-const HomeScreen = () => {
-  const { width: windowWidth } = useWindowDimensions();
-  const width = Math.min(windowWidth, 600);
-  const scaleFactor = Math.min(1, windowWidth / 360);
-  const styles = useHomeScreenStyles();
-  const uiStyles = useHomeUIStyles();
-  const router = useRouter();
-
-  const [refreshing, setRefreshing] = useState(false);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const language = useAuthStore((state) => state.language);
-  const profile = useAuthStore((state) => state.profile);
-
-  const availableTypes = useEqubTypesStore((state) => state.availableTypes);
-  const loadAvailableTypes = useEqubTypesStore((state) => state.loadAvailableTypes);
-
+const AuctionCarousel = ({
+  title,
+  subtitle,
+  sectionIcon = "tag-multiple-outline",
+  data,
+  width,
+  router,
+  serverOffset,
+  tick,
+  t,
+  language,
+  token,
+  onBidPlaced,
+  onAuctionsPatch,
+}: CarouselProps) => {
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  const t = useMemo(() => translations[language] ?? {}, [language]);
-  const isNavigating = useRef(false);
+  const [bidAmounts, setBidAmounts] = useState<Record<string, string>>({});
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [termsAuction, setTermsAuction] = useState<AuctionItem | null>(null);
+  const { bold, regular } = useLocalizedTypography(language);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        await loadAvailableTypes();
-      } catch (e) {
-        console.warn("Failed to load equb types", e);
-      } finally {
-        if (mounted) setHasLoadedOnce(true);
-      }
-    })();
-    return () => { mounted = false; };
-  }, [loadAvailableTypes]);
+    if (data.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => {
+        const next = (prev + 1) % data.length;
+        scrollRef.current?.scrollTo({ x: next * width, animated: true });
+        return next;
+      });
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [data.length, width]);
 
-  const handleNav = (path: string) => {
-    if (isNavigating.current) return;
-    isNavigating.current = true;
-    InteractionManager.runAfterInteractions(() => {
-      router.push(path as any);
-      setTimeout(() => { isNavigating.current = false; }, 1000);
-    });
+  const onScrollEnd = useCallback(
+    (event: any) => {
+      const index = Math.round(event?.nativeEvent?.contentOffset?.x / width);
+      if (!isNaN(index)) setCurrentIndex(index);
+    },
+    [width],
+  );
+
+  const getBidAmount = (item: AuctionItem) =>
+    bidAmounts[item.id] ?? (item.minBid ?? 1.01).toFixed(2);
+
+  const runBid = async (item: AuctionItem) => {
+    const amount = parseFloat(getBidAmount(item));
+    if (isNaN(amount)) return;
+    setSubmittingId(item.id);
+    try {
+      await placeBidWithTerms(item.id, amount);
+      onAuctionsPatch(item.id, { userHasBid: true, bidCount: (item.bidCount ?? 0) + 1 });
+      useCheretaStore.getState().bumpMyBids();
+      onBidPlaced();
+      Toast.show({ type: "success", text1: t.bidSuccessTitle || "Bid placed", text2: t.bidClosedForYou });
+    } catch (e: any) {
+      Toast.show({ type: "error", text1: e?.response?.data?.message || e?.message || "Bid failed" });
+    } finally {
+      setSubmittingId(null);
+      setTermsAuction(null);
+    }
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const nextIndex = (prev + 1) % promoImages.length;
-        try {
-          scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
-        } catch {}
-        return nextIndex;
-      });
-    }, 4500);
-    return () => clearInterval(interval);
-  }, [width]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await loadAvailableTypes();
-    } catch (e) {
-      console.warn("Refresh failed", e);
-    } finally {
-      setRefreshing(false);
+  const onSubmitPress = (item: AuctionItem) => {
+    if (!token) {
+      Alert.alert(t.signInToBid || "Sign in", t.signInToBid);
+      router.push("/");
+      return;
     }
-  }, [loadAvailableTypes]);
+    if (item.userHasBid) return;
+    setTermsAuction(item);
+  };
 
-  const handleNotifications = useCallback(() => handleNav("/screen/notifications"), [router]);
+  if (!data.length) {
+    return (
+      <View style={{ marginBottom: 24, paddingHorizontal: 16 }}>
+        <CheretaSectionHeader
+          title={title}
+          subtitle={subtitle}
+          icon={sectionIcon}
+          bold={bold}
+          regular={regular}
+        />
+        <Text style={[regular, { color: "#6B7280", textAlign: "center", marginTop: 8 }]}>
+          {t.noCategoryAuctions}
+        </Text>
+      </View>
+    );
+  }
 
-  const goToPrev = useCallback(() => {
-    setCurrentIndex((prev) => {
-      const prevIndex = prev === 0 ? promoImages.length - 1 : prev - 1;
-      try { scrollRef.current?.scrollTo({ x: prevIndex * width, animated: true }); } catch {}
-      return prevIndex;
-    });
-  }, [width]);
-
-  const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => {
-      const nextIndex = (prev + 1) % promoImages.length;
-      try { scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true }); } catch {}
-      return nextIndex;
-    });
-  }, [width]);
-
-  const onScrollEnd = useCallback((event: any) => {
-    const index = Math.round(event?.nativeEvent?.contentOffset?.x / width);
-    if (!isNaN(index)) setCurrentIndex(index);
-  }, [width]);
-
-  const navIcon = useMemo(() => <MaterialCommunityIcons name="home" size={22} color="#fff" />, []);
-  const bellIcon = useMemo(() => <MaterialCommunityIcons name="bell" size={22} color="#fff" />, []);
-
-  const carouselItems = useMemo(() => promoImages.map((img, index) => (
-    <Image key={index} source={img} style={uiStyles.promoImage} contentFit="cover" transition={200} />
-  )), [uiStyles.promoImage]);
-
-  const standardEqubs = useMemo(() =>
-    availableTypes
-      .filter(type => EQUB_TYPE_CONFIG[type]?.category === "standard")
-      .map(type => {
-        const config = EQUB_TYPE_CONFIG[type];
-        return { icon: config.icon, label: (t as any)?.[config.labelKey] ?? config.fallbackLabel, route: config.route, imageStyle: config.imageStyle, tint: config.tint !== false };
-      }),
-    [availableTypes, t]
-  );
-
-  const propertyEqubs = useMemo(() =>
-    availableTypes
-      .filter(type => EQUB_TYPE_CONFIG[type]?.category === "property")
-      .map(type => {
-        const config = EQUB_TYPE_CONFIG[type];
-        return { icon: config.icon, label: (t as any)?.[config.labelKey] ?? config.fallbackLabel, route: config.route, imageStyle: config.imageStyle, tint: false };
-      }),
-    [availableTypes, t]
-  );
-
-  const applianceEqubs = useMemo(() =>
-    availableTypes
-      .filter(type => EQUB_TYPE_CONFIG[type]?.category === "appliance")
-      .map(type => {
-        const config = EQUB_TYPE_CONFIG[type];
-        return { icon: config.icon, label: (t as any)?.[config.labelKey] ?? config.fallbackLabel, route: config.route, imageStyle: config.imageStyle, tint: false };
-      }),
-    [availableTypes, t]
-  );
-
-  const showSkeleton = !hasLoadedOnce || refreshing;
+  const now = Date.now() + serverOffset;
 
   return (
-    <View style={styles.root}>
-      <Navbar
-        leftIcon={navIcon}
-        title="Digital Chereta"
-        firstIcon={bellIcon}
-        onFirstPress={handleNotifications}
-        showNotificationBadge={true}
+    <View style={{ marginBottom: 24, marginTop: 4 }}>
+      <CheretaSectionHeader
+        title={title}
+        subtitle={subtitle}
+        icon={sectionIcon}
+        bold={bold}
+        regular={regular}
       />
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onScrollEnd}
+      >
+        {data.map((item) => {
+          void tick;
+          const ended = isAuctionEnded(item.endTime, item.status, now);
+          const countdown = formatCountdown(item.endTime, now);
+          const hasBid = !!item.userHasBid;
+          const isSubmitting = submittingId === item.id;
 
-      {profile?.status === "SUSPENDED" ? (
-        <SuspendedScreen />
-      ) : showSkeleton ? (
-        <View style={styles.skeletonPadding}>
-          <SkeletonLoader width="60%" height={24 * scaleFactor} style={styles.skeletonTitleStyle} />
-          <SkeletonEqubGrid />
-          <SkeletonLoader width="100%" height={85 * scaleFactor} style={styles.skeletonCarouselStyle} />
-          <SkeletonLoader width="60%" height={24 * scaleFactor} style={styles.skeletonTitleStyle} />
-          <SkeletonEqubGrid />
-          <SkeletonLoader width="100%" height={180 * scaleFactor} style={styles.skeletonAdStyle} />
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={["#fff"]}
-              progressBackgroundColor="#0B3C8A"
-              tintColor="#fff"
-            />
-          }
-          bounces={true}
-          scrollEventThrottle={16}
-          removeClippedSubviews={true}
-          keyboardShouldPersistTaps="handled"
-          renderToHardwareTextureAndroid={true}
-          shouldRasterizeIOS={true}
-        >
-          {standardEqubs.length > 0 && (
-            <>
-              <Text style={[typography.englishBold, uiStyles.sectionTitle]}>
-                {t?.startEqubToday ?? "Start Equb Today"}
-              </Text>
-              <View style={uiStyles.grid}>
-                {standardEqubs.map((item, index) => (
-                  <CategoryItem
-                    key={`std-${index}`}
-                    imageSource={item.icon}
-                    label={item.label}
-                    onPress={() => handleNav(item.route)}
+          return (
+            <View key={item.id} style={{ width, paddingHorizontal: 16 }}>
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 26,
+                  overflow: "hidden",
+                  elevation: 6,
+                  shadowColor: "#000",
+                  shadowOpacity: 0.12,
+                  shadowRadius: 10,
+                  shadowOffset: { width: 0, height: 4 },
+                }}
+              >
+                <View style={{ position: "relative" }}>
+                  <Image
+                    source={resolveAuctionImage(item.images?.[0] || "laptop")}
+                    style={{ width: "100%", height: 210 }}
+                    contentFit="cover"
                   />
-                ))}
+                  {!ended && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 12,
+                        left: 12,
+                        backgroundColor: "rgba(255, 255, 255, 0.95)",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 20,
+                        shadowColor: "#000",
+                        shadowOpacity: 0.05,
+                        shadowRadius: 4,
+                      }}
+                    >
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#EF4444", marginRight: 6 }} />
+                      <Text style={[bold, { color: "#EF4444", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }]}>{t.liveBadge}</Text>
+                    </View>
+                  )}
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 12,
+                      right: 12,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: "rgba(255,255,255,0.95)",
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 20,
+                    }}
+                  >
+                    <MaterialCommunityIcons name="eye-outline" size={16} color="#3D5D96" />
+                    <Text style={[bold, { marginLeft: 6, fontSize: 12, color: "#3D5D96" }]}>
+                      {item.termsAcceptedCount ?? 0}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={{ padding: 18 }}>
+                  <Text style={[bold, { fontSize: 19, color: "#111827", textAlign: "center", marginBottom: 16 }]} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+
+                  <View
+                    style={{
+                      backgroundColor: "#F9FAFB",
+                      borderRadius: 16,
+                      padding: 14,
+                      borderWidth: 1,
+                      borderColor: "#F3F4F6",
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
+                      <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+                        <View style={{ backgroundColor: "#ECFCCB", borderRadius: 12, width: 28, height: 28, justifyContent: "center", alignItems: "center", marginRight: 8 }}>
+                          <MaterialCommunityIcons name="gavel" size={14} color="#65A30D" />
+                        </View>
+                        <View>
+                          <Text style={[regular, { color: "#6B7280", fontSize: 11 }]}>{t.bidServiceFee}</Text>
+                          <Text style={[bold, { color: "#111827", fontSize: 14 }]}>{(item.serviceFee ?? 75).toFixed(2)} Br</Text>
+                        </View>
+                      </View>
+                      <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
+                        <View style={{ alignItems: "flex-end" }}>
+                          <Text style={[regular, { color: "#6B7280", fontSize: 11 }]}>{t.auctionCode}</Text>
+                          <Text style={[bold, { color: "#111827", fontSize: 14 }]}>
+                            {formatAuctionCodeDisplay(item.auctionCode)}
+                          </Text>
+                        </View>
+                        <View style={{ backgroundColor: "#DBEAFE", borderRadius: 12, width: 28, height: 28, justifyContent: "center", alignItems: "center", marginLeft: 8 }}>
+                          <MaterialCommunityIcons name="tag-outline" size={14} color="#2563EB" />
+                        </View>
+                      </View>
+                    </View>
+                    
+                    <View style={{ height: 1, backgroundColor: "#E5E7EB", marginBottom: 12 }} />
+
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                        <MaterialCommunityIcons
+                          name={ended ? "clock-outline" : "timer-outline"}
+                          size={18}
+                          color={ended ? "#9CA3AF" : CH_TIMER_RED}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text style={[bold, { color: ended ? "#9CA3AF" : CH_TIMER_RED, fontSize: 15 }]}>
+                          {ended ? t.auctionEnded : countdown}
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <MaterialCommunityIcons name="history" size={16} color="#3D5D96" style={{ marginRight: 4 }} />
+                        <Text style={[bold, { color: "#3D5D96" }]}>
+                          {item.bidCount ?? 0} {t.bidsLabel}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {!ended && (
+                    <View style={{ marginTop: 14, opacity: hasBid ? 0.55 : 1 }}>
+                      <CheretaBidInput
+                        language={language}
+                        label={t.enterBidAmountLabel || "Enter bid amount"}
+                        value={getBidAmount(item)}
+                        disabled={hasBid || isSubmitting}
+                        min={item.minBid ?? 1.01}
+                        max={item.maxBid ?? 999.99}
+                        step={item.bidStep ?? 0.01}
+                        onChange={(v) => setBidAmounts((p) => ({ ...p, [item.id]: v }))}
+                        confirmLabel={t.done || "OK"}
+                      />
+
+                      <TouchableOpacity
+                        style={{
+                          marginTop: 12,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          paddingVertical: 15,
+                          paddingHorizontal: 20,
+                          borderRadius: 999,
+                          backgroundColor: hasBid ? "#9CA3AF" : CH_SUBMIT_GREEN,
+                          borderBottomWidth: hasBid ? 0 : 4,
+                          borderBottomColor: CH_SUBMIT_GREEN_DARK,
+                          shadowColor: hasBid ? "transparent" : "#4A6B28",
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.35,
+                          shadowRadius: 6,
+                          elevation: hasBid ? 0 : 8,
+                          opacity: hasBid ? 0.9 : 1,
+                        }}
+                        disabled={hasBid || isSubmitting}
+                        onPress={() => onSubmitPress(item)}
+                        activeOpacity={0.85}
+                      >
+                        {isSubmitting ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <>
+                            <MaterialCommunityIcons name="gavel" size={20} color="#fff" style={{ marginRight: 8 }} />
+                            <Text style={[bold, { color: "#fff", fontSize: 16, letterSpacing: 0.3 }]}>
+                              {hasBid ? t.bidClosedForYou : t.submitBid}
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    style={{
+                      marginTop: 12,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      paddingVertical: 14,
+                      paddingHorizontal: 20,
+                      borderRadius: 999,
+                      backgroundColor: ended ? "#9CA3AF" : "#fff",
+                      borderWidth: ended ? 0 : 2,
+                      borderColor: CH_VIEW_MORE_BLUE,
+                      shadowColor: ended ? "#000" : CH_VIEW_MORE_BLUE,
+                      shadowOffset: { width: 0, height: 3 },
+                      shadowOpacity: ended ? 0.1 : 0.18,
+                      shadowRadius: 6,
+                      elevation: ended ? 2 : 4,
+                    }}
+                    onPress={() =>
+                      ended
+                        ? router.push(`/screen/auction_results?id=${item.id}`)
+                        : router.push(`/screen/auction_details?id=${item.id}`)
+                    }
+                    activeOpacity={0.88}
+                  >
+                    <Text style={[bold, { color: ended ? "#fff" : CH_VIEW_MORE_BLUE, fontSize: 15, marginRight: 6 }]}>
+                      {ended ? t.viewResults : t.viewMore}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name={ended ? "trophy-outline" : "arrow-right-circle-outline"}
+                      size={20}
+                      color={ended ? "#fff" : CH_VIEW_MORE_BLUE}
+                    />
+                  </TouchableOpacity>
+
+                  <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, justifyContent: "center" }}>
+                    <MaterialCommunityIcons name="shield-check" size={16} color="#22C55E" />
+                    <Text style={[regular, { marginLeft: 6, fontSize: 11, color: "#6B7280", letterSpacing: 0.5, textAlign: "center" }]}>
+                      {t.termsFooter?.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
               </View>
-              <View style={uiStyles.divider} />
-            </>
-          )}
-
-          <View style={uiStyles.promoContainer}>
-            <ScrollView
-              ref={scrollRef}
-              horizontal
-              pagingEnabled={false}
-              snapToInterval={width}
-              snapToAlignment="center"
-              decelerationRate="fast"
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={onScrollEnd}
-              scrollEventThrottle={16}
-            >
-              {carouselItems}
-            </ScrollView>
-
-            <View style={uiStyles.carouselControls}>
-              <TouchableOpacity style={uiStyles.circleButton} onPress={goToPrev} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} activeOpacity={0.7}>
-                <MaterialCommunityIcons name="chevron-left" size={22} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={uiStyles.circleButton} onPress={goToNext} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} activeOpacity={0.7}>
-                <MaterialCommunityIcons name="chevron-right" size={22} color="#fff" />
-              </TouchableOpacity>
             </View>
-          </View>
+          );
+        })}
+      </ScrollView>
+      <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 12 }}>
+        {data.map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: i === currentIndex ? LEMON_GREEN : "#E5E7EB",
+              marginHorizontal: 4,
+            }}
+          />
+        ))}
+      </View>
 
-          <View style={uiStyles.dotsContainer}>
-            {promoImages.map((_, index) => (
-              <View key={index} style={[uiStyles.dot, currentIndex === index && uiStyles.activeDot]} />
-            ))}
-          </View>
-
-          {propertyEqubs.length > 0 && (
-            <>
-              <View style={uiStyles.divider} />
-              <Text style={[typography.amharicBold, uiStyles.sectionTitle]}>
-                {t?.otherEqubTypes ?? "Other Equb Types"}
-              </Text>
-              <View style={uiStyles.grid}>
-                {propertyEqubs.map((item, index) => (
-                  <CategoryItem
-                    key={`prop-${index}`}
-                    imageSource={item.icon}
-                    label={item.label}
-                    tint={false}
-                    imageStyle={item.imageStyle}
-                    onPress={() => handleNav(item.route)}
-                  />
-                ))}
-              </View>
-            </>
-          )}
-
-          {applianceEqubs.length > 0 && (
-            <>
-              <View style={uiStyles.divider} />
-              <Text style={[typography.amharicBold, uiStyles.sectionTitle]}>
-                {t?.newEqubTypes ?? "Appliance Equb Types"}
-              </Text>
-              <View style={uiStyles.grid}>
-                {applianceEqubs.map((item, index) => (
-                  <CategoryItem
-                    key={`app-${index}`}
-                    imageSource={item.icon}
-                    label={item.label}
-                    tint={false}
-                    imageStyle={item.imageStyle}
-                    onPress={() => handleNav(item.route)}
-                  />
-                ))}
-              </View>
-            </>
-          )}
-
-          <View style={uiStyles.divider} />
-
-          <View style={uiStyles.adImageContainer}>
-            <Image source={adImageSource} style={styles.adImage} contentFit="cover" transition={200} />
-          </View>
-        </ScrollView>
-      )}
+      <CheretaTermsModal
+        visible={!!termsAuction}
+        language={language}
+        t={t}
+        onClose={() => setTermsAuction(null)}
+        onConfirm={async () => {
+          if (termsAuction) await runBid(termsAuction);
+        }}
+      />
     </View>
   );
 };
 
-export default memo(HomeScreen);
+export default function HomeScreen() {
+  const { width: windowWidth } = useWindowDimensions();
+  const width = Math.min(windowWidth, 600);
+  const router = useRouter();
+  const language = useAuthStore((state) => state.language);
+  const token = useAuthStore((state) => state.token);
+  const t = useMemo(() => translations[language] ?? translations.English ?? {}, [language]);
+  const { bold, regular } = useLocalizedTypography(language);
+  const styles = useHomeScreenStyles();
+  const uiStyles = useHomeUIStyles();
+  const [refreshing, setRefreshing] = useState(false);
+  const cachedAuctions = useCheretaCache((s) => s.auctions);
+  const cachedOffset = useCheretaCache((s) => s.serverOffset);
+  const [auctions, setAuctions] = useState<AuctionItem[]>(cachedAuctions);
+  const [serverOffset, setServerOffset] = useState(cachedOffset);
+  const [tick, setTick] = useState(0);
+
+  const mainScrollRef = useRef<ScrollView>(null);
+  const [mainIndex, setMainIndex] = useState(0);
+
+  const loadAuctions = useCallback(async () => {
+    const list = await useCheretaCache.getState().refreshAuctions();
+    setServerOffset(useCheretaCache.getState().serverOffset);
+    setAuctions(list);
+  }, []);
+
+  useEffect(() => {
+    if (cachedAuctions.length) {
+      setAuctions(cachedAuctions);
+      setServerOffset(cachedOffset);
+    }
+  }, [cachedAuctions, cachedOffset]);
+
+  useEffect(() => {
+    loadAuctions();
+  }, [loadAuctions]);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAuctions();
+      const poll = setInterval(loadAuctions, 4000);
+      return () => clearInterval(poll);
+    }, [loadAuctions]),
+  );
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadAuctions();
+    setRefreshing(false);
+  }, [loadAuctions]);
+
+  const patchAuction = useCallback((id: string, patch: Partial<AuctionItem>) => {
+    setAuctions((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+  }, []);
+
+  const now = Date.now() + serverOffset;
+  const digital = useMemo(() => (auctions ?? []).filter((a) => a.category === "DIGITAL" && !isAuctionEnded(a.endTime, a.status, now)), [auctions, serverOffset]);
+  const appliances = useMemo(() => (auctions ?? []).filter((a) => a.category === "APPLIANCE" && !isAuctionEnded(a.endTime, a.status, now)), [auctions, serverOffset]);
+  const endedAuctions = useMemo(() => (auctions ?? []).filter((a) => isAuctionEnded(a.endTime, a.status, now)), [auctions, serverOffset]);
+
+  return (
+    <View style={styles.root}>
+      {/* @ts-ignore */}
+      <StatusBar style="light" backgroundColor="#3D5D96" />
+      <ImmersiveNavScreen
+        navbar={
+          <Navbar
+            leftIcon={<MaterialCommunityIcons name="gavel" size={22} color="#fff" />}
+            title={t.appName || "Digital Chereta"}
+            firstIcon={<MaterialCommunityIcons name="bell" size={22} color="#fff" />}
+            onFirstPress={() => router.push("/screen/notifications")}
+            showNotificationBadge
+          />
+        }
+        contentContainerStyle={styles.scrollContent}
+        scrollViewProps={{
+          refreshControl: <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3D5D96" />,
+        }}
+      >
+        <CheretaSectionHeader
+          variant="hero"
+          title={t.activeAuctionsTitle || "Active Auctions"}
+          subtitle={t.activeAuctionsSubtitle}
+          bold={bold}
+          regular={regular}
+        />
+
+        <AuctionCarousel
+          title={t.specialDigitalAuctions || "Special Digital Auctions"}
+          subtitle={t.specialDigitalAuctionsSubtitle}
+          sectionIcon="cellphone-link"
+          data={digital}
+          width={width}
+          router={router}
+          serverOffset={serverOffset}
+          tick={tick}
+          t={t}
+          language={language}
+          token={token}
+          onBidPlaced={loadAuctions}
+          onAuctionsPatch={patchAuction}
+        />
+
+        <View style={uiStyles.divider} />
+
+        <AuctionCarousel
+          title={t.homeAppliancesAuctions || "Home Appliances Auctions"}
+          subtitle={t.homeAppliancesAuctionsSubtitle}
+          sectionIcon="sofa-outline"
+          data={appliances}
+          width={width}
+          router={router}
+          serverOffset={serverOffset}
+          tick={tick}
+          t={t}
+          language={language}
+          token={token}
+          onBidPlaced={loadAuctions}
+          onAuctionsPatch={patchAuction}
+        />
+        
+        {endedAuctions.length > 0 && (
+          <>
+            <View style={uiStyles.divider} />
+            <AuctionCarousel
+              title={t.auctionEnded || "Ended Auctions"}
+              subtitle={t.endedAuctionsSubtitle}
+              sectionIcon="flag-checkered"
+              data={endedAuctions}
+              width={width}
+              router={router}
+              serverOffset={serverOffset}
+              tick={tick}
+              t={t}
+              language={language}
+              token={token}
+              onBidPlaced={loadAuctions}
+              onAuctionsPatch={patchAuction}
+            />
+          </>
+        )}
+      </ImmersiveNavScreen>
+    </View>
+  );
+}

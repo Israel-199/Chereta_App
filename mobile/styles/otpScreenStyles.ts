@@ -93,15 +93,15 @@ export const useResponsiveStyles = () => {
       paddingHorizontal: scale(baseSpacing * 1.2),
       paddingVertical: verticalScale(baseSpacing * 0.4),
       fontWeight: "600",
-      color: "#0B3C8A",
+      color: "#8DB048",
     },
     resendLink: {
-      color: "#0B3C8A",
+      color: "#8DB048",
       fontWeight: "600",
       fontSize: textFontSize,
     },
     button: {
-      backgroundColor: "#0B3C8A",
+      backgroundColor: "#8DB048",
       paddingVertical: verticalScale(10 * scaleFactor),
       paddingHorizontal: scale(baseSpacing * 1.5),
       maxWidth: 400,
