@@ -167,6 +167,7 @@ export async function getAuctionBids(req: Request, res: Response) {
 export async function createAuction(req: Request, res: Response) {
   try {
     const {
+      auctionCode,
       title,
       specs,
       category,
@@ -203,6 +204,7 @@ export async function createAuction(req: Request, res: Response) {
 
     const auction = await prisma.auctionItem.create({
       data: {
+        auctionCode,
         title,
         specs: parsedSpecs,
         category: category || "DIGITAL",
