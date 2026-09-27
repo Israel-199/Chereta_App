@@ -6,7 +6,7 @@ import { upload } from "../../config/upload";
 const router = Router();
 
 router.get("/stats", authMiddleware, requireAdmin, adminController.getStats);
-router.get("/sidebar-counts", authMiddleware, requireAdmin, adminController.getSidebarCounts);
+router.get("/sidebar-counts", authMiddleware, requireAdmin, adminController.getSidebarCounts); // Note: still valid for attachments/tickets/kyc
 
 router.get("/users", authMiddleware, requireAdmin, adminController.getAllUsers);
 router.patch("/users/status", authMiddleware, requireAdmin, adminController.toggleUserStatus);
@@ -17,40 +17,31 @@ router.get("/audit-logs", authMiddleware, requireRole(["SUPER_ADMIN"]), adminCon
 
 router.post("/notifications/send", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.sendNotification);
 
-router.get("/equbs", authMiddleware, requireAdmin, adminController.getAllEqubs);
-router.get("/equbs/:id/members-detail", authMiddleware, requireAdmin, adminController.getEqubMembersDetail);
-router.post("/equbs/create", authMiddleware, requireRole(["SUPER_ADMIN"]), upload.fields([{ name: "frontImage", maxCount: 1 }, { name: "backImage", maxCount: 1 }]), adminController.createEqub);
-router.get("/payouts", authMiddleware, requireAdmin, adminController.getPayouts);
-router.get("/registrations", authMiddleware, requireAdmin, adminController.getEqubRegistrations);
+// AUCTIONS API (CHERETA)
+router.get("/auctions", authMiddleware, requireRole(["SUPER_ADMIN", "FINANCE_ADMIN", "CUSTOMER_SERVICE_ADMIN"]), adminController.getAllAuctions);
+router.get("/auctions/:id", authMiddleware, adminController.getAuctionDetails);
+router.get("/auctions/:id/bids", authMiddleware, adminController.getAuctionBids);
+router.post("/auctions", authMiddleware, requireRole(["SUPER_ADMIN"]), upload.fields([{ name: "images", maxCount: 8 }]), adminController.createAuction);
+router.patch("/auctions/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), upload.fields([{ name: "images", maxCount: 8 }]), adminController.updateAuction);
+router.patch("/auctions/:id/status", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.updateAuctionStatus);
+router.post("/auctions/:id/resolve", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.resolveAuction);
+router.delete("/auctions/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.deleteAuction);
+router.get("/chereta-payments", authMiddleware, requireRole(["SUPER_ADMIN", "FINANCE_ADMIN"]), adminController.getCheretaPayments);
+router.get("/chereta-payments", authMiddleware, requireRole(["SUPER_ADMIN", "FINANCE_ADMIN"]), adminController.getCheretaPayments);
+
+// Attachments & Support Tickets
 router.get("/attachments", authMiddleware, requireAdmin, adminController.getAttachments);
 router.delete("/attachments/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.deleteAttachment);
+router.patch("/attachments/:id/status", authMiddleware, requireRole(["SUPER_ADMIN", "CUSTOMER_SERVICE_ADMIN"]), adminController.setAttachmentStatus);
+
 router.get("/support-tickets", authMiddleware, requireAdmin, adminController.getSupportTickets);
 router.patch("/support-tickets/:id", authMiddleware, requireRole(["SUPER_ADMIN", "CUSTOMER_SERVICE_ADMIN"]), adminController.updateSupportTicketStatus);
 router.delete("/support-tickets/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.deleteSupportTicket);
-router.delete("/registrations/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.deleteRegistration);
-router.get("/monitoring", authMiddleware, requireAdmin, adminController.getPlatformMonitoring);
-router.post("/force-add", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.forceAddMember);
-router.post("/force-remove", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.forceRemoveMember);
-router.post("/equbs/:id/draw", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.drawWinner);
-router.patch("/equbs/:id/pause", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.pauseEqub);
-router.patch("/equbs/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), upload.fields([{ name: "frontImage", maxCount: 1 }, { name: "backImage", maxCount: 1 }]), adminController.updateEqub);
-router.delete("/equbs/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.deleteEqub);
 
-// New Routes
+// Admins Management
 router.get("/admins", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.getAdmins);
 router.post("/admins", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.createAdmin);
 router.patch("/admins/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.updateAdmin);
 router.delete("/admins/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.deleteAdmin);
-
-router.get("/payments", authMiddleware, requireRole(["SUPER_ADMIN", "FINANCE_ADMIN", "CUSTOMER_SERVICE_ADMIN"]), adminController.getPayments);
-router.patch("/payments/:id/verify", authMiddleware, requireRole(["SUPER_ADMIN", "FINANCE_ADMIN"]), adminController.verifyPayment);
-router.patch("/payouts/:id/verify", authMiddleware, requireRole(["SUPER_ADMIN", "FINANCE_ADMIN"]), adminController.verifyPayout);
-
-router.patch("/attachments/:id/status", authMiddleware, requireRole(["SUPER_ADMIN", "CUSTOMER_SERVICE_ADMIN"]), adminController.setAttachmentStatus);
-
-// Equb Share Marketplace Admin Routes
-router.get("/listings", authMiddleware, requireRole(["SUPER_ADMIN", "FINANCE_ADMIN"]), adminController.getAllListings);
-router.patch("/listings/:id/status", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.adminUpdateListingStatus);
-router.delete("/listings/:id", authMiddleware, requireRole(["SUPER_ADMIN"]), adminController.adminDeleteListing);
 
 export default router;

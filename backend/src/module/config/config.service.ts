@@ -2,10 +2,12 @@ import prisma from "../../utils/prisma/prisma";
 
 export class ConfigService {
   static async getAppStatus() {
-    const config = await prisma.appConfig.findFirst();
+    let config = await prisma.appConfig.findFirst();
 
     if (!config) {
-      throw new Error("App configuration not found");
+      config = await prisma.appConfig.create({
+        data: { appLive: true, launchDate: new Date() },
+      });
     }
 
     if (!config.launchDate) {

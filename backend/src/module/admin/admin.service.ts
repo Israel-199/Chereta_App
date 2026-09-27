@@ -7,24 +7,16 @@ export async function getDashboardStats() {
   const [
     totalUsers,
     activeUsers,
-    totalEqubs,
-    runningEqubs,
-    pendingPayments,
-    successfulPayments,
-    failedPayments,
     fraudAlerts,
     notificationCount,
     recentActivities,
     pendingKycCount,
-    pendingEqubRegistrations,
+    totalAuctions,
+    activeAuctions,
+    totalBids
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { status: "ACTIVE" } }),
-    prisma.equb.count(),
-    prisma.equb.count({ where: { state: "ACTIVE" } }),
-    prisma.payment.count({ where: { status: "PENDING" } }),
-    prisma.payment.count({ where: { status: "PAID" } }),
-    prisma.payment.count({ where: { status: "FAILED" } }),
     prisma.auditLog.count({ where: { action: { contains: "SUSPICIOUS" } } }),
     prisma.notificationLog.count(),
     prisma.activityLog.findMany({
@@ -33,46 +25,31 @@ export async function getDashboardStats() {
       include: { user: { select: { firstName: true, lastName: true, phoneNumber: true } } },
     }),
     prisma.user.count({ where: { idStatus: "PENDING" } }),
-    prisma.equbRegistration.count(),
+    prisma.auctionItem.count(),
+    prisma.auctionItem.count({ where: { status: "ACTIVE" } }),
+    prisma.bid.count()
   ]);
 
   const now = new Date();
   const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
-  const weekStart = new Date(new Date().setDate(now.getDate() - 7));
-  const monthStart = new Date(new Date().setMonth(now.getMonth() - 1));
 
   const [
-    dailyRevenue,
-    weeklyRevenue,
-    monthlyRevenue,
-    totalRevenue,
     newUsersToday,
   ] = await Promise.all([
-    prisma.payment.aggregate({ where: { status: "PAID", paidAt: { gte: todayStart } }, _sum: { amount: true } }),
-    prisma.payment.aggregate({ where: { status: "PAID", paidAt: { gte: weekStart } }, _sum: { amount: true } }),
-    prisma.payment.aggregate({ where: { status: "PAID", paidAt: { gte: monthStart } }, _sum: { amount: true } }),
-    prisma.payment.aggregate({ where: { status: "PAID" }, _sum: { amount: true } }),
     prisma.user.count({ where: { createdAt: { gte: todayStart } } })
   ]);
 
   return {
     totalUsers,
     activeUsers,
-    totalEqubs,
-    runningEqubs,
-    pendingPayments,
-    pendingKyc: pendingKycCount,
-    successfulPayments,
-    failedPayments,
     fraudAlerts,
     notificationSummary: notificationCount,
-    dailyRevenue: dailyRevenue._sum.amount || 0,
-    weeklyRevenue: weeklyRevenue._sum.amount || 0,
-    monthlyRevenue: monthlyRevenue._sum.amount || 0,
-    totalRevenue: totalRevenue._sum.amount || 0,
+    pendingKyc: pendingKycCount,
+    totalAuctions,
+    activeAuctions,
+    totalBids,
     newUsersToday,
-    recentActivities,
-    pendingEqubRegistrations
+    recentActivities
   };
 }
 
@@ -80,7 +57,7 @@ export async function getDashboardStats() {
  * Enhanced user searching and filtering
  */
 export async function getUsers(filters: any) {
-  const { status, idStatus, search, equbType, equbAmount } = filters;
+  const { status, idStatus, search } = filters;
   const where: any = {};
   if (status) where.status = status;
   if (idStatus) where.idStatus = idStatus;
@@ -93,42 +70,14 @@ export async function getUsers(filters: any) {
     ];
   }
 
-  if (equbType || equbAmount) {
-    where.equbMembers = {
-      some: {
-        equb: {
-          ...(equbType && { type: equbType }),
-          ...(equbAmount && { contributionAmount: Number(equbAmount) })
-        }
-      }
-    };
-  }
-
   return await prisma.user.findMany({
     where,
     orderBy: { createdAt: "desc" },
     include: {
-      _count: {
-        select: { equbMembers: true },
-      },
-      equbMembers: {
-        include: {
-          equb: true
-        }
-      },
-      payments: {
+      bids: {
         orderBy: { createdAt: 'desc' },
-        take: 10,
-        include: {
-          equb: { select: { name: true, type: true } }
-        }
+        take: 10
       },
-      payouts: {
-        include: {
-          equb: { select: { name: true, total: true } }
-        }
-      },
-      lotteryWins: true,
       attachments: true
     }
   });
@@ -158,30 +107,7 @@ export async function toggleUserStatus(userId: string, status: "ACTIVE" | "SUSPE
 }
 
 /**
- * Force remove member
- */
-export async function forceRemoveMember(equbId: string, userId: string) {
-  return await prisma.equbMember.delete({
-    where: {
-      equbId_userId: {
-        equbId,
-        userId
-      }
-    }
-  });
-}
-
-/**
- * Delete an Equb registration
- */
-export async function deleteRegistration(id: string) {
-  return await prisma.equbRegistration.delete({
-    where: { id }
-  });
-}
-
-/**
- * Fetch system audit logs (Unified from Activity, AdminAction, and Audit mechanisms)
+ * Fetch system audit logs
  */
 export async function getAuditLogs(params: { page?: number, limit?: number, search?: string, origin?: string }) {
   const { page = 1, limit = 50, search = '', origin = 'ALL' } = params;
@@ -198,7 +124,6 @@ export async function getAuditLogs(params: { page?: number, limit?: number, sear
     ]
   } : {};
 
-  // 1. Mobile Activity Logs
   if (origin === 'ALL' || origin === 'MOBILE') {
     const activityQuery = {
       where: search ? {
@@ -229,7 +154,6 @@ export async function getAuditLogs(params: { page?: number, limit?: number, sear
     })));
   }
 
-  // 2. Admin Action Logs
   if (origin === 'ALL' || origin === 'ADMIN') {
     const adminQuery = {
       where: search ? {
@@ -261,7 +185,6 @@ export async function getAuditLogs(params: { page?: number, limit?: number, sear
     })));
   }
 
-  // 3. System Audit Logs
   if (origin === 'ALL' || origin === 'SYSTEM') {
     const auditQuery = {
       where: search ? {
@@ -292,9 +215,7 @@ export async function getAuditLogs(params: { page?: number, limit?: number, sear
     })));
   }
 
-  // Sort unified logs chronologically
   combinedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
   const total = totalActivity + totalAdmin + totalAudit;
   
   return {
@@ -345,26 +266,6 @@ export async function broadcastNotification(title: string, message: string, targ
   return { message: `Broadcasted to ${users.length} users`, recipientCount: users.length };
 }
 
-/**
- * Get all payouts
- */
-export async function getPayouts() {
-  const payouts = await prisma.payout.findMany({
-    include: {
-      recipient: { select: { firstName: true, lastName: true, phoneNumber: true } },
-      equb: { select: { name: true, total: true } }
-    },
-    orderBy: { createdAt: "desc" }
-  });
-
-  return payouts.map(p => ({
-    ...p,
-    user: p.recipient, // Map recipient to user for frontend consistency
-    amount: p.equb?.total || 0,
-    status: p.confirmedAt ? 'COMPLETED' : 'PENDING',
-    paidAt: p.confirmedAt
-  }));
-}
 
 /**
  * Get all user attachments
@@ -417,45 +318,15 @@ export async function deleteAttachment(id: string) {
     where: { id }
   });
 }
-export async function getEqubRegistrations() {
-  return await prisma.equbRegistration.findMany({
-    include: {
-      user: { select: { firstName: true, lastName: true, phoneNumber: true } }
-    },
-    orderBy: { createdAt: "desc" }
-  });
-}
-
-/**
- * Get detailed platform monitoring statistics
- */
-export async function getPlatformMonitoring() {
-  const [totalPayouts, avgContribution] = await Promise.all([
-    prisma.payout.count(),
-    prisma.equb.aggregate({ _avg: { contributionAmount: true } })
-  ]);
-
-  const paymentStats = await prisma.payment.groupBy({
-    by: ['status'],
-    _count: { id: true }
-  });
-
-  return {
-    totalPayoutsRecorded: totalPayouts,
-    averageContribution: Math.round(avgContribution._avg.contributionAmount || 0),
-    paymentHealth: paymentStats
-  };
-}
 
 /**
  * Get quick counts for sidebar badges
  */
 export async function getSidebarCounts() {
-  const [pendingKyc, pendingRegistrations, attachmentCount, ticketCount] = await Promise.all([
+  const [pendingKyc, attachmentCount, ticketCount] = await Promise.all([
     prisma.user.count({ where: { idStatus: "PENDING" } }),
-    prisma.equbRegistration.count(),
     prisma.attachment.count(),
     prisma.supportTicket.count({ where: { status: "OPEN" } })
   ]);
-  return { pendingKyc, pendingRegistrations, attachmentCount, ticketCount };
+  return { pendingKyc, attachmentCount, ticketCount };
 }

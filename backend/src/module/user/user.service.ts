@@ -40,9 +40,11 @@ export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
-      equbMembers: { include: { equb: true } },
-      payments: true,
-      payouts: true,
+      bids: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        include: { auctionItem: true },
+      },
       lotterySpins: { include: { round: true } },
       attachments: true,
     },

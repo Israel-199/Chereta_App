@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed:chereta": "ts-node scripts/seedChereta.ts",
+    "db:migrate": "node scripts/runWithDirectUrl.js npx prisma migrate deploy",
+    "db:repair-chereta": "node scripts/runWithDirectUrl.js npx ts-node scripts/repairCheretaSchema.ts",
+    "db:setup-chereta": "npm run db:repair-chereta && npx prisma db seed && npm run seed:chereta",
+    "db:setup": "npm run db:setup-chereta"
   },
   "prisma": {
     "schema": "src/utils/prisma/schema.prisma",

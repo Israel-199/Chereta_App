@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model User {
@@ -29,25 +30,21 @@ model User {
   adminActions     AdminActionLog[]  @relation("AdminActions")
   AuditLog         AuditLog[]
   devices          Device[]
-  equbMembers      EqubMember[]
   lotteryWins      LotteryRound[]    @relation("LotteryWinner")
   lotterySpins     LotterySpin[]
   notifications    NotificationLog[]
   otpLogs          OtpLog[]
-  payments         Payment[]
-  confirmedPayouts Payout[]          @relation("PayoutConfirmedBy")
-  payouts          Payout[]          @relation("PayoutRecipient")
   RefreshToken     RefreshToken[]
-  processedRefunds Refund[]
   attachments      Attachment[]      @relation("UserAttachments")
   supportTickets   SupportTicket[]
   idStatus         IdStatus          @default(NONE)
   idType           String?
   idNumber         String?
   userCode         String?           @unique
-  equbRegistrations EqubRegistration[]
-  sellerListings   EqubShareListing[] @relation("SellerListings")
-  buyerListings    EqubShareListing[] @relation("BuyerListings")
+
+  bids              Bid[]
+  servicePayments   CheretaServicePayment[]
+  termsAcceptances  AuctionTermsAcceptance[]
 }
 
 enum IdStatus {
@@ -82,7 +79,7 @@ enum AttachmentStatus {
 }
 
 model Attachment {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
   userId    String
   fileUrl   String
   fileName  String?
@@ -90,8 +87,8 @@ model Attachment {
   publicId  String?
   about     String?
   status    AttachmentStatus @default(PENDING)
-  createdAt DateTime @default(now())
-  user      User     @relation("UserAttachments", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  user      User             @relation("UserAttachments", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Device {
@@ -119,84 +116,12 @@ model OtpLog {
 
   @@index([phoneNumber])
 }
-model Equb {
-  id                 String          @id @default(uuid())
-  name               String
-  contributionAmount Int
-  numberOfMembers    Int
-  total              Int           
-  startDate          DateTime
-  endDate            DateTime
-  payoutOrderType    PayoutOrderType
-  state              EqubState       @default(DRAFT)
-  suspensionReason   String?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  frontImage         String?
-  backImage          String?
-  propertyModel      String?
-  type               EqubType        @default(DAILY)
-  members            EqubMember[]
-  payments           Payment[]
-  payouts            Payout[]
-  shareListings      EqubShareListing[]
-  sellingPrice       Int?
-}
 
 model AppConfig {
   id         String    @id @default(uuid())
   appLive    Boolean   @default(false)
   launchDate DateTime?
   updatedAt  DateTime  @updatedAt
-}
-
-model EqubMember {
-  id       String    @id @default(uuid())
-  equbId   String
-  userId   String
-  joinedAt DateTime  @default(now())
-  leftAt       DateTime?
-  isSuspended  Boolean   @default(false)
-  suspensionReason String?
-  equb     Equb      @relation(fields: [equbId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([equbId, userId])
-}
-
-model Payment {
-  id             String          @id @default(uuid())
-  userId         String
-  equbId         String
-  amount         Int
-  cycleNumber    Int
-  provider       PaymentProvider
-  status         PaymentStatus   @default(PENDING)
-  transactionRef String          @unique
-  paidAt         DateTime?
-  dueDate        DateTime
-  createdAt      DateTime        @default(now())
-  equb           Equb            @relation(fields: [equbId], references: [id], onDelete: Cascade)
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refunds        Refund[]
-
-  @@unique([userId, equbId, cycleNumber])
-}
-
-model Payout {
-  id                String    @id @default(uuid())
-  equbId            String
-  cycleNumber       Int
-  recipientUserId   String
-  confirmedByUserId String?
-  confirmedAt       DateTime?
-  createdAt         DateTime  @default(now())
-  confirmedByRole   Role?
-  confirmedBy       User?     @relation("PayoutConfirmedBy", fields: [confirmedByUserId], references: [id])
-  equb              Equb      @relation(fields: [equbId], references: [id], onDelete: Cascade)
-  recipient         User      @relation("PayoutRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
-
-  @@unique([equbId, cycleNumber])
 }
 
 model NotificationLog {
@@ -239,20 +164,6 @@ model AdminActionLog {
   reason    String?
   createdAt DateTime @default(now())
   admin     User     @relation("AdminActions", fields: [adminId], references: [id], onDelete: Cascade)
-}
-
-model Refund {
-  id            String       @id @default(uuid())
-  paymentId     String
-  amount        Int
-  status        RefundStatus @default(REQUESTED)
-  reason        String?
-  providerRef   String?
-  createdAt     DateTime     @default(now())
-  processedAt   DateTime?
-  processedById String?
-  payment       Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  processedBy   User?        @relation(fields: [processedById], references: [id])
 }
 
 model LotteryRound {
@@ -299,6 +210,100 @@ model AuditLog {
   @@index([userId, action])
 }
 
+// ----- CHERETA (AUCTION) SPECIFIC MODELS -----
+
+model AuctionItem {
+  id            String          @id @default(uuid())
+  auctionCode   String          @unique
+  title         String
+  category      AuctionCategory
+  categoryLabel String?
+  itemNumber    String?
+  specs         Json?
+  images        String[]
+  serviceFee    Float           @default(75)
+  minBid        Float           @default(1.01)
+  maxBid        Float           @default(999.99)
+  bidStep       Float           @default(0.01)
+  viewCount     Int             @default(0)
+  startTime     DateTime
+  endTime       DateTime
+  status        AuctionStatus   @default(ACTIVE)
+  winnerUserId  String?
+  winningAmount Float?
+  resolvedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  bids            Bid[]
+  servicePayments CheretaServicePayment[]
+  termsAcceptances AuctionTermsAcceptance[]
+}
+
+model AuctionTermsAcceptance {
+  id            String      @id @default(uuid())
+  userId        String
+  auctionItemId String
+  createdAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auctionItem   AuctionItem @relation(fields: [auctionItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, auctionItemId])
+  @@index([auctionItemId])
+}
+
+model Bid {
+  id               String                 @id @default(uuid())
+  userId           String
+  auctionItemId    String
+  amount           Float
+  servicePaymentId String?                @unique
+  createdAt        DateTime               @default(now())
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auctionItem      AuctionItem            @relation(fields: [auctionItemId], references: [id], onDelete: Cascade)
+  servicePayment   CheretaServicePayment? @relation(fields: [servicePaymentId], references: [id])
+
+  @@index([auctionItemId, amount])
+}
+
+model CheretaServicePayment {
+  id            String               @id @default(uuid())
+  userId        String
+  auctionItemId String
+  bidAmount     Float
+  amount        Float
+  currency      String               @default("ETB")
+  status        CheretaPaymentStatus @default(PENDING)
+  provider      String               @default("CHAPA")
+  txRef         String               @unique
+  chapaRef      String?
+  checkoutUrl   String?
+  createdAt     DateTime             @default(now())
+  paidAt        DateTime?
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auctionItem   AuctionItem          @relation(fields: [auctionItemId], references: [id], onDelete: Cascade)
+  bid           Bid?
+
+  @@index([userId, auctionItemId, status])
+}
+
+enum CheretaPaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum AuctionCategory {
+  DIGITAL
+  APPLIANCE
+}
+
+enum AuctionStatus {
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
 enum UserStatus {
   ACTIVE
   SUSPENDED
@@ -313,33 +318,9 @@ enum Role {
   MEMBER
 }
 
-enum EqubType {
-  DAILY
-  WEEKLY
-  MONTHLY
-  HOUSE
-  VEHICLE
-  PHONE
-  TV
-  REFRIGERATOR
-  SOFA
-}
-
-enum EqubState {
-  DRAFT
-  ACTIVE
-  IN_PROGRESS
-  COMPLETED
-  SUSPENDED
-}
-
-enum PayoutOrderType {
-  MANUAL
-  RANDOM
-}
-
 enum PaymentProvider {
   TELEBIRR
+  CHAPA
   CBE
   DASHEN
   COOP
@@ -350,18 +331,13 @@ enum PaymentProvider {
   MASTERCARD
 }
 
-enum PaymentStatus {
-  PAID
-  PENDING
-  OVERDUE
-  FAILED
-}
-
 enum NotificationType {
   OTP
   REMINDER
   PAYMENT_SUCCESS
   PAYOUT_CONFIRMED
+  BID_PLACED
+  AUCTION_WON
 }
 
 enum NotificationChannel {
@@ -372,47 +348,4 @@ enum NotificationChannel {
 enum NotificationStatus {
   SENT
   FAILED
-}
-
-enum RefundStatus {
-  REQUESTED
-  APPROVED
-  REJECTED
-}
-
-model EqubRegistration {
-  id            String   @id @default(uuid())
-  userId        String
-  fullName      String
-  phoneNumber   String
-  address       String
-  monthlyIncome String
-  type          EqubType @default(VEHICLE)
-  createdAt     DateTime @default(now())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, type])
-}
-
-model EqubShareListing {
-  id              String        @id @default(uuid())
-  equbId          String
-  sellerId        String
-  sellingPrice    Int
-  remainingRounds Int
-  status          ListingStatus @default(ACTIVE)
-  buyerId         String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  equb            Equb          @relation(fields: [equbId], references: [id], onDelete: Cascade)
-  seller          User          @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
-  buyer           User?         @relation("BuyerListings", fields: [buyerId], references: [id])
-
-  @@index([equbId, status])
-}
-
-enum ListingStatus {
-  ACTIVE
-  SOLD
-  CANCELLED
 }

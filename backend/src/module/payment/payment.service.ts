@@ -1,4 +1,4 @@
-import { PaymentProvider, PaymentStatus } from "@prisma/client";
+import { PaymentProvider } from "@prisma/client";
 import prisma from "../../utils/prisma/prisma";
 
 const ALLOWED_PROVIDERS: PaymentProvider[] = [
@@ -23,47 +23,13 @@ interface PaymentInput {
   dueDate: Date;
 }
 
-export const makePayment = async (input: PaymentInput) => {
-  const {
-    userId,
-    equbId,
-    amount,
-    cycleNumber,
-    provider,
-    transactionRef,
-    dueDate,
-  } = input;
-
-  if (!ALLOWED_PROVIDERS.includes(provider)) {
-    throw new Error(`Provider ${provider} is not supported`);
-  }
-
-  const membership = await prisma.equbMember.findUnique({
-    where: { equbId_userId: { equbId, userId } },
-  });
-  if (!membership) throw new Error("User is not a member of this Equb");
-
-  return prisma.payment.create({
-    data: {
-      userId,
-      equbId,
-      amount,
-      cycleNumber,
-      provider,
-      transactionRef,
-      status: PaymentStatus.PAID,
-      paidAt: new Date(),
-      dueDate,
-    },
-  });
+/** Legacy Equb payments removed — Chereta uses bid service fees separately. */
+export const makePayment = async (_input: PaymentInput) => {
+  throw new Error("Equb payments are no longer supported in Chereta");
 };
 
-export const getUserContributions = async (userId: string) => {
-  const result = await prisma.payment.aggregate({
-    where: { userId, status: PaymentStatus.PAID },
-    _sum: { amount: true },
-  });
-  return result._sum.amount || 0;
+export const getUserContributions = async (_userId: string) => {
+  return 0;
 };
 
 export const handleWebhook = async (
@@ -74,15 +40,7 @@ export const handleWebhook = async (
     throw new Error(`Webhook from unsupported provider: ${provider}`);
   }
 
-  const { transactionRef, status } = payload;
-
-  await prisma.payment.update({
-    where: { transactionRef },
-    data: {
-      status: status as PaymentStatus,
-      paidAt: status === "PAID" ? new Date() : undefined,
-    },
-  });
+  const { status } = payload;
 
   await prisma.webhookLog.create({
     data: {

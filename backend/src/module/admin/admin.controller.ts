@@ -1,12 +1,9 @@
 import prisma from "../../utils/prisma/prisma";
 import { Request, Response } from "express";
 import * as adminService from "./admin.service";
-import { EqubService } from "../equb/equb.service";
 import cloudinary from "../../lib/cloudinary";
 import { UploadApiResponse } from "cloudinary";
 import bcrypt from "bcryptjs";
-
-const equbService = new EqubService();
 
 export async function getStats(req: Request, res: Response) {
   try {
@@ -124,138 +121,234 @@ export async function sendNotification(req: Request, res: Response) {
   }
 }
 
-export async function getEqubRegistrations(req: Request, res: Response) {
+export async function getAllAuctions(req: Request, res: Response) {
   try {
-    const registrations = await adminService.getEqubRegistrations();
-    res.status(200).json(registrations);
+    const auctions = await prisma.auctionItem.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { bids: true } }
+      }
+    });
+    res.status(200).json(auctions);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 }
 
-export async function getAllEqubs(req: Request, res: Response) {
+export async function getAuctionDetails(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id;
-    const role = (req as any).user?.role;
-    const equbs = await equbService.getEqubsForUser(userId!, role!);
-    res.status(200).json(equbs);
+    const id = req.params.id as string;
+    const auction = await prisma.auctionItem.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { bids: true } }
+      }
+    });
+    res.status(200).json(auction);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 }
 
-export async function drawWinner(req: Request, res: Response) {
+export async function getAuctionBids(req: Request, res: Response) {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const result = await equbService.performDraw(id);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-}
-
-export async function pauseEqub(req: Request, res: Response) {
-  try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { reason } = req.body;
-    const result = await equbService.toggleEqubPause(id, reason);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-}
-
-export async function createEqub(req: Request, res: Response) {
-  try {
-    const data = { ...req.body };
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-
-    if (files && files['frontImage'] && files['frontImage'][0]) {
-      const frontFile = files['frontImage'][0];
-      const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: `equbs/front`, resource_type: "auto" },
-          (error, result) => error ? reject(error) : resolve(result!)
-        );
-        stream.end(frontFile.buffer);
-      });
-      data.frontImage = result.secure_url;
-    }
-
-    if (files && files['backImage'] && files['backImage'][0]) {
-      const backFile = files['backImage'][0];
-      const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: `equbs/back`, resource_type: "auto" },
-          (error, result) => error ? reject(error) : resolve(result!)
-        );
-        stream.end(backFile.buffer);
-      });
-      data.backImage = result.secure_url;
-    }
-
-    if (data.contributionAmount) data.contributionAmount = Number(data.contributionAmount);
-    if (data.numberOfMembers) data.numberOfMembers = Number(data.numberOfMembers);
-    if (data.total) data.total = Number(data.total);
-    if (data.sellingPrice) data.sellingPrice = Number(data.sellingPrice);
-
-    const result = await equbService.createEqub(data);
-    res.status(201).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-}
-
-export async function updateEqub(req: Request, res: Response) {
-  try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const data = { ...req.body };
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-
-    if (files && files['frontImage'] && files['frontImage'][0]) {
-      const frontFile = files['frontImage'][0];
-      const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: `equbs/front`, resource_type: "auto" },
-          (error, result) => error ? reject(error) : resolve(result!)
-        );
-        stream.end(frontFile.buffer);
-      });
-      data.frontImage = result.secure_url;
-    }
-
-    if (files && files['backImage'] && files['backImage'][0]) {
-      const backFile = files['backImage'][0];
-      const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: `equbs/back`, resource_type: "auto" },
-          (error, result) => error ? reject(error) : resolve(result!)
-        );
-        stream.end(backFile.buffer);
-      });
-      data.backImage = result.secure_url;
-    }
-
-    if (data.contributionAmount) data.contributionAmount = Number(data.contributionAmount);
-    if (data.numberOfMembers) data.numberOfMembers = Number(data.numberOfMembers);
-    if (data.total) data.total = Number(data.total);
-    if (data.sellingPrice) data.sellingPrice = Number(data.sellingPrice);
-
-    const result = await equbService.updateEqub(id, data);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-}
-
-export async function getPayouts(req: Request, res: Response) {
-  try {
-    const payouts = await adminService.getPayouts();
-    res.status(200).json(payouts);
+    const id = req.params.id as string;
+    const bids = await prisma.bid.findMany({
+      where: { auctionItemId: id },
+      include: { user: { select: { firstName: true, lastName: true, phoneNumber: true, email: true, address: true } } },
+      orderBy: { amount: 'asc' }
+    });
+    res.status(200).json(bids);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 }
+
+export async function createAuction(req: Request, res: Response) {
+  try {
+    const {
+      title,
+      specs,
+      category,
+      categoryLabel,
+      itemNumber,
+      startTime,
+      endTime,
+      serviceFee,
+      minBid,
+      maxBid,
+      bidStep,
+    } = req.body;
+    let images: string[] = [];
+    let parsedSpecs = specs;
+    if (typeof specs === "string") {
+      try {
+        parsedSpecs = JSON.parse(specs);
+      } catch {
+        parsedSpecs = {};
+      }
+    }
+
+    if (req.files && Array.isArray(req.files)) {
+      const filesWrapper = req.files as any[];
+      for (const file of filesWrapper) {
+        images.push(file.path); 
+      }
+    } else if (req.files && (req.files as any).images) {
+      const filesWrapper = (req.files as any).images;
+      for (const file of filesWrapper) {
+        images.push(file.path);
+      }
+    }
+
+    const auction = await prisma.auctionItem.create({
+      data: {
+        title,
+        specs: parsedSpecs,
+        category: category || "DIGITAL",
+        categoryLabel: categoryLabel || null,
+        itemNumber: itemNumber || null,
+        images,
+        serviceFee: serviceFee != null ? Number(serviceFee) : 75,
+        minBid: minBid != null ? Number(minBid) : 1.01,
+        maxBid: maxBid != null ? Number(maxBid) : 999.99,
+        bidStep: bidStep != null ? Number(bidStep) : 0.01,
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        status: "ACTIVE",
+      },
+    });
+    res.status(201).json(auction);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export async function updateAuction(req: Request, res: Response) {
+  try {
+    const id = req.params.id as string;
+    const body = req.body;
+    let images: string[] | undefined;
+    if (req.files && (req.files as any).images) {
+      images = [];
+      for (const file of (req.files as any).images) {
+        images.push(file.path);
+      }
+    }
+    let parsedSpecs = body.specs;
+    if (typeof body.specs === "string") {
+      try {
+        parsedSpecs = JSON.parse(body.specs);
+      } catch {
+        parsedSpecs = undefined;
+      }
+    }
+
+    const data: any = {};
+    if (body.title != null) data.title = body.title;
+    if (body.category != null) data.category = body.category;
+    if (body.categoryLabel != null) data.categoryLabel = body.categoryLabel;
+    if (body.itemNumber != null) data.itemNumber = body.itemNumber;
+    if (parsedSpecs != null) data.specs = parsedSpecs;
+
+    let mergedImages: string[] | undefined;
+    const imageJson = body.imagesUrls || body.existingImages;
+    if (imageJson) {
+      try {
+        const parsed = typeof imageJson === "string" ? JSON.parse(imageJson) : imageJson;
+        if (Array.isArray(parsed)) {
+          mergedImages =
+            body.replaceImages === "true" || body.replaceImages === true
+              ? parsed.filter(Boolean)
+              : parsed.filter(Boolean);
+        }
+      } catch {
+        mergedImages = undefined;
+      }
+    }
+    if (images?.length) {
+      mergedImages = [...(mergedImages || []), ...images];
+    }
+    if (mergedImages) data.images = mergedImages;
+    if (body.serviceFee != null) data.serviceFee = Number(body.serviceFee);
+    if (body.minBid != null) data.minBid = Number(body.minBid);
+    if (body.maxBid != null) data.maxBid = Number(body.maxBid);
+    if (body.bidStep != null) data.bidStep = Number(body.bidStep);
+    if (body.startTime != null) data.startTime = new Date(body.startTime);
+    if (body.endTime != null) data.endTime = new Date(body.endTime);
+    if (body.status != null) data.status = body.status;
+
+    const auction = await prisma.auctionItem.update({ where: { id }, data });
+    res.status(200).json(auction);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export async function getCheretaPayments(req: Request, res: Response) {
+  try {
+    const payments = await prisma.cheretaServicePayment.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      include: {
+        user: { select: { firstName: true, lastName: true, phoneNumber: true, email: true } },
+        auctionItem: { select: { id: true, title: true, auctionCode: true } },
+        bid: { select: { id: true, amount: true } },
+      },
+    });
+    res.status(200).json(payments);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export async function resolveAuction(req: Request, res: Response) {
+  try {
+    const id = req.params.id as string;
+    const { resolveAuctionWinner } = await import("../chereta/chereta.service");
+    const auction = await resolveAuctionWinner(id);
+    res.status(200).json(auction);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export async function updateAuctionStatus(req: Request, res: Response) {
+  try {
+    const id = req.params.id as string;
+    const { status } = req.body;
+    const auction = await prisma.auctionItem.update({
+      where: { id },
+      data: { status }
+    });
+    res.status(200).json(auction);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export async function deleteAuction(req: Request, res: Response) {
+  try {
+    const id = req.params.id as string;
+    // ensure no bids or cascade delete?
+    await prisma.bid.deleteMany({ where: { auctionItemId: id } });
+    await prisma.auctionItem.delete({ where: { id } });
+    res.status(200).json({ message: "Auction deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export async function getSidebarCounts(req: Request, res: Response) {
+  try {
+    const counts = await adminService.getSidebarCounts();
+    res.status(200).json(counts);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
 
 export async function getAttachments(req: Request, res: Response) {
   try {
@@ -312,62 +405,7 @@ export async function deleteSupportTicket(req: Request, res: Response) {
   }
 }
 
-export async function getPlatformMonitoring(req: Request, res: Response) {
-  try {
-    const stats = await adminService.getPlatformMonitoring();
-    res.status(200).json(stats);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-}
 
-export async function forceAddMember(req: Request, res: Response) {
-  try {
-    const { equbId, userId } = req.body;
-    const result = await equbService.joinEqub(equbId, userId);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-}
-
-export async function forceRemoveMember(req: Request, res: Response) {
-  try {
-    const { equbId, userId } = req.body;
-    const result = await equbService.leaveEqub(equbId, userId);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-}
-
-export async function deleteRegistration(req: Request, res: Response) {
-  try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const result = await adminService.deleteRegistration(id);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-}
-export async function deleteEqub(req: Request, res: Response) {
-  try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const result = await equbService.deleteEqub(id);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-}
-
-export async function getSidebarCounts(req: Request, res: Response) {
-  try {
-    const counts = await adminService.getSidebarCounts();
-    res.status(200).json(counts);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-}
 
 // -----------------------------
 // Admins Management
@@ -443,73 +481,6 @@ export async function deleteAdmin(req: Request, res: Response) {
 // -----------------------------
 // Financial Transactions 
 // -----------------------------
-export async function getPayments(req: Request, res: Response) {
-  try {
-    const payments = await prisma.payment.findMany({
-      include: { user: true, equb: true },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.status(200).json(payments);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-}
-
-export async function verifyPayment(req: Request, res: Response) {
-  try {
-    const id = req.params.id as string;
-    const { status } = req.body; // e.g. COMPLETED or REJECTED
-    const payment = await prisma.payment.update({
-      where: { id },
-      data: { status }
-    });
-    
-    await prisma.adminActionLog.create({
-      data: {
-        adminId: (req as any).user?.id || "SYSTEM",
-        action: `PAYMENT_${status}`,
-        target: "PAYMENT",
-        targetId: id,
-        reason: `Payment verified by Finance Admin`
-      }
-    });
-
-    res.status(200).json(payment);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-}
-
-export async function verifyPayout(req: Request, res: Response) {
-  try {
-    const id = req.params.id as string;
-    const { status } = req.body; 
-    
-    // In DB, payout status isn't an explicit enum like PaymentStatus currently,
-    // so we handle it by setting confirmedAt time and confirmedBy user.
-    const payout = await prisma.payout.update({
-      where: { id },
-      data: { 
-        confirmedAt: status === 'COMPLETED' ? new Date() : null,
-        confirmedByUserId: status === 'COMPLETED' ? ((req as any).user?.id || undefined) : null
-      }
-    });
-
-    await prisma.adminActionLog.create({
-      data: {
-        adminId: (req as any).user?.id || "SYSTEM",
-        action: `PAYOUT_${status}`,
-        target: "PAYOUT",
-        targetId: id,
-        reason: `Payout verified by Finance Admin`
-      }
-    });
-
-    res.status(200).json(payout);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-}
 
 export async function setAttachmentStatus(req: Request, res: Response) {
   try {
@@ -527,88 +498,6 @@ export async function setAttachmentStatus(req: Request, res: Response) {
   }
 }
 
-// -----------------------------
-// Equb Share Marketplace
-// -----------------------------
 
-export async function getAllListings(req: Request, res: Response) {
-  try {
-    const listings = await prisma.equbShareListing.findMany({
-      include: {
-        seller: { select: { id: true, firstName: true, lastName: true, userCode: true } },
-        buyer: { select: { id: true, firstName: true, lastName: true, userCode: true } },
-        equb: { select: { id: true, name: true, contributionAmount: true, numberOfMembers: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
 
-    res.status(200).json(listings);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-}
-
-export async function adminUpdateListingStatus(req: Request, res: Response) {
-  try {
-    const id = req.params.id as string;
-    const { status } = req.body;
-
-    if (!['ACTIVE', 'SOLD', 'CANCELLED'].includes(status)) {
-      return res.status(400).json({ error: "Invalid listing status" });
-    }
-
-    const updatedListing = await prisma.equbShareListing.update({
-      where: { id },
-      data: { status }
-    });
-
-    await prisma.adminActionLog.create({
-      data: {
-        adminId: (req as any).user?.id || "SYSTEM",
-        action: `LISTING_${status}`,
-        target: "EQUB_SHARE_LISTING",
-        targetId: id,
-        reason: `Listing status updated by admin`
-      }
-    });
-
-    res.status(200).json(updatedListing);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-}
-
-export async function adminDeleteListing(req: Request, res: Response) {
-  try {
-    const id = req.params.id as string;
-
-    await prisma.equbShareListing.delete({
-      where: { id }
-    });
-
-    await prisma.adminActionLog.create({
-      data: {
-        adminId: (req as any).user?.id || "SYSTEM",
-        action: `LISTING_DELETED`,
-        target: "EQUB_SHARE_LISTING",
-        targetId: id,
-        reason: `Listing deleted by admin`
-      }
-    });
-
-    res.status(200).json({ message: "Listing deleted successfully" });
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-}
-
-export async function getEqubMembersDetail(req: Request, res: Response) {
-  try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const details = await equbService.getEqubMembersDetail(id);
-    res.status(200).json(details);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-}
 

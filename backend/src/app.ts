@@ -8,7 +8,7 @@ require("dotenv").config();
 
 import authRoutes from "./module/auth/auth.route";
 import userRoutes from "./module/user/user.route";
-import equbRoutes from "./module/equb/equb.route";
+import cheretaRoutes from "./module/chereta/chereta.route";
 import errorHandler from "./middleware/errorHandler";
 import configRoutes from "./module/config/config.route";
 import paymentRoutes from "./module/payment/payment.routes";
@@ -56,7 +56,7 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/equbs", equbRoutes);
+app.use("/api/chereta", cheretaRoutes);
 app.use("/api/config", configRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/support", supportRoutes);
