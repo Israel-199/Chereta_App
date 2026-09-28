@@ -31,6 +31,7 @@ export const useCheretaCache = create<State>((set, get) => ({
         serverOffset: new Date(serverTime).getTime() - Date.now(),
         auctionsReady: true,
       });
+      void get().refreshWinners();
       return auctions;
     } catch {
       set({ auctionsReady: true });
@@ -41,7 +42,9 @@ export const useCheretaCache = create<State>((set, get) => ({
   refreshWinners: async () => {
     try {
       const { winners: list } = await fetchWinners();
-      const winners = (list ?? []).filter((w) => w?.winner);
+      const winners = (list ?? []).filter(
+        (w) => w?.winner != null || w?.auction?.winningAmount != null,
+      );
       set({ winners, winnersReady: true });
       return winners;
     } catch {

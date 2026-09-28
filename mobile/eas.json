@@ -11,7 +11,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://chereta-app-1.onrender.com/api"
+        "EXPO_PUBLIC_API_URL": "https://chereta-app-3.onrender.com/api"
       }
     },
     "preview": {
@@ -20,7 +20,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://chereta-app-1.onrender.com/api"
+        "EXPO_PUBLIC_API_URL": "https://chereta-app-3.onrender.com/api"
       }
     },
     "production": {
@@ -30,7 +30,7 @@
       },
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://chereta-app-1.onrender.com/api"
+        "EXPO_PUBLIC_API_URL": "https://chereta-app-3.onrender.com/api"
       }
     }
   },

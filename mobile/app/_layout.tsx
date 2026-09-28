@@ -25,22 +25,20 @@ import { useFonts } from "expo-font";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
-import { StatusBar } from "expo-status-bar";
-// import * as ScreenCapture from "expo-screen-capture";
 import { NavigationBar } from "expo-navigation-bar";
-
-import { useAuthStore } from "@/store/auth";
-import { runWhenIdle } from "@/utils/runWhenIdle";
+import AppStatusBar from "@/component/AppStatusBar";
 import {
   applyAndroidSystemNavigationBar,
   bindAndroidSystemNavigationBar,
 } from "@/utils/androidSystemBar";
-import { LEMON_GREEN, SCREEN_BG } from "@/constants/theme";
+import { SCREEN_BG } from "@/constants/theme";
 import { useCheretaCache } from "@/store/cheretaCache";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 import { ErrorBoundary } from "@/component/ErrorBoundary";
 import { translations } from "../translations";
+import { useAuthStore } from "@/store/auth";
+import { runWhenIdle } from "@/utils/runWhenIdle";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -298,8 +296,7 @@ const AppContent = memo(() => {
   return (
     <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
       {Platform.OS === "android" && <NavigationBar style="dark" hidden={false} />}
-      {/* @ts-ignore */}
-      <StatusBar style="light" backgroundColor={LEMON_GREEN} translucent={Platform.OS === "android"} />
+      <AppStatusBar />
       <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
       <Stack
         screenOptions={{
@@ -344,8 +341,8 @@ const AppContent = memo(() => {
 });
 
 function RootContent({ fontsLoaded }: { fontsLoaded: boolean }) {
-  const preloadData = useAuthStore((state) => state.preloadData);
-  const token = useAuthStore((state) => state.token);
+  const preloadData = useAuthStore((state: any) => state.preloadData);
+  const token = useAuthStore((state: any) => state.token);
 
   useEffect(() => bindAndroidSystemNavigationBar(), []);
 

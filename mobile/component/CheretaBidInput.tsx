@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalizedTypography } from "../utils/useLocalizedTypography";
-import { CH_SUBMIT_GREEN, CH_VIEW_MORE_BLUE } from "../constants/theme";
+import { CH_SUBMIT_GREEN, CH_TIMER_RED, CH_VIEW_MORE_BLUE } from "../constants/theme";
+import { CH_MIN_BID_ETB } from "../constants/bidding";
 
 type Props = {
   language: string;
@@ -21,7 +23,15 @@ type Props = {
   step: number;
   onChange: (v: string) => void;
   confirmLabel?: string;
+  minHint?: string;
 };
+
+function formatBidDisplay(raw: string, min: number): string {
+  const n = parseFloat(raw);
+  if (!raw || Number.isNaN(n) || n <= 0) return String(Math.max(min, CH_MIN_BID_ETB));
+  if (Number.isInteger(n)) return String(n);
+  return n.toFixed(2).replace(/\.?0+$/, "");
+}
 
 export default function CheretaBidInput({
   language,
@@ -33,18 +43,34 @@ export default function CheretaBidInput({
   step,
   onChange,
   confirmLabel = "OK",
+  minHint,
 }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [draft, setDraft] = useState(value);
   const { bold, regular, fontFamily } = useLocalizedTypography(language);
 
+  useEffect(() => {
+    if (sheetOpen) setDraft(value);
+  }, [sheetOpen, value]);
+
+  const applyAmount = useCallback(
+    (next: number) => {
+      const clamped = Math.max(min, Math.min(max, next));
+      const asInt = step >= 1 ? Math.round(clamped) : Math.round(clamped * 100) / 100;
+      const str = step >= 1 ? String(asInt) : asInt.toFixed(2);
+      setDraft(str);
+      onChange(str);
+    },
+    [min, max, step, onChange],
+  );
+
   const adjust = (delta: number) => {
-    const current = parseFloat(value) || min;
-    let next = Math.round((current + delta) / step) * step;
-    next = Math.max(min, Math.min(max, next));
-    onChange(next.toFixed(2));
+    const current = parseFloat(draft) || min;
+    applyAmount(current + delta);
   };
 
-  const display = value && parseFloat(value) > 0 ? value : "—";
+  const display = formatBidDisplay(value, min);
+  const hintText = minHint ?? `Min. bid: ${CH_MIN_BID_ETB} ETB`;
 
   return (
     <>
@@ -60,7 +86,14 @@ export default function CheretaBidInput({
             activeOpacity={0.7}
             style={styles.dashHit}
           >
-            <Text style={[bold, styles.amount, { fontFamily: fontFamily(true) }]}>{display}</Text>
+            <Text
+              style={[bold, styles.amount, { fontFamily: fontFamily(true) }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.65}
+            >
+              {display} ETB
+            </Text>
             <View style={styles.underline} />
           </TouchableOpacity>
         </View>
@@ -72,20 +105,30 @@ export default function CheretaBidInput({
             <View style={styles.handle} />
             <Text style={[bold, styles.sheetTitle, { fontFamily: fontFamily(true) }]}>{label}</Text>
             <View style={styles.stepper}>
-              <TouchableOpacity style={styles.stepBtn} onPress={() => adjust(-step)}>
+              <TouchableOpacity style={styles.stepBtn} onPress={() => adjust(-step)} activeOpacity={0.75}>
                 <MaterialCommunityIcons name="minus" size={26} color="#374151" />
               </TouchableOpacity>
-              <Text style={[bold, styles.sheetAmount, { fontFamily: fontFamily(true) }]}>{value}</Text>
-              <TouchableOpacity style={styles.stepBtn} onPress={() => adjust(step)}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.amountScroll}>
+                <Text
+                  style={[bold, styles.sheetAmount, { fontFamily: fontFamily(true) }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.5}
+                >
+                  {formatBidDisplay(draft, min)} ETB
+                </Text>
+              </ScrollView>
+              <TouchableOpacity style={styles.stepBtn} onPress={() => adjust(step)} activeOpacity={0.75}>
                 <MaterialCommunityIcons name="plus" size={26} color="#374151" />
               </TouchableOpacity>
             </View>
-            <Text style={[regular, styles.hint, { fontFamily: fontFamily() }]}>
-              {min.toFixed(2)} – {max.toFixed(2)} ETB
-            </Text>
+            <Text style={[regular, styles.hint, { fontFamily: fontFamily() }]}>{hintText}</Text>
             <TouchableOpacity
               style={[styles.doneBtn, { backgroundColor: CH_SUBMIT_GREEN }]}
-              onPress={() => setSheetOpen(false)}
+              onPress={() => {
+                onChange(formatBidDisplay(draft, min));
+                setSheetOpen(false);
+              }}
             >
               <Text style={[bold, styles.doneText, { fontFamily: fontFamily(true) }]}>{confirmLabel}</Text>
             </TouchableOpacity>
@@ -130,8 +173,10 @@ const styles = StyleSheet.create({
     color: "#374151",
   },
   dashHit: {
+    flex: 1,
     paddingBottom: 2,
-    minWidth: 48,
+    minWidth: 72,
+    maxWidth: "100%",
   },
   amount: {
     fontSize: 16,
@@ -173,7 +218,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 24,
+    gap: 16,
     marginBottom: 12,
   },
   stepBtn: {
@@ -186,11 +231,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
+  amountScroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 140,
+    maxWidth: 200,
+  },
   sheetAmount: {
-    fontSize: 32,
+    fontSize: 34,
     color: CH_VIEW_MORE_BLUE,
-    minWidth: 120,
     textAlign: "center",
+    paddingHorizontal: 8,
   },
   hint: {
     textAlign: "center",

@@ -20,6 +20,7 @@ export type AuctionItem = {
   bidCount?: number;
   termsAcceptedCount?: number;
   userHasBid?: boolean;
+  userBidAmount?: number | null;
   serverTime?: string;
 };
 

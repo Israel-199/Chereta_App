@@ -14,15 +14,17 @@ export async function placeBidWithTerms(auctionId: string, amount: number) {
       const { Linking } = await import("react-native");
       await Linking.openURL(fee.checkoutUrl);
     }
+    const maxAttempts = fee.mock ? 3 : 15;
+    const delayMs = fee.mock ? 80 : 1500;
     let paid = false;
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < maxAttempts; i++) {
       const v = await verifyBidServiceFee(auctionId, fee.paymentId);
       if (v.status === "PAID") {
         paid = true;
         break;
       }
       if (v.status === "FAILED") break;
-      await new Promise((r) => setTimeout(r, fee.mock ? 200 : 1500));
+      await new Promise((r) => setTimeout(r, delayMs));
     }
     if (!paid) throw new Error("Service fee not completed");
   }

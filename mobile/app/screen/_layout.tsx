@@ -1,9 +1,10 @@
 import React from "react";
 import { Stack } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Pressable, Platform, StatusBar as RNStatusBar, View } from "react-native";
+import { Pressable, Platform, View } from "react-native";
 import { useAuthStore } from "@/store/auth";
-import { StatusBar } from "expo-status-bar";
+import AppStatusBar from "@/component/AppStatusBar";
+import { NAV_HEADER_GREEN } from "@/constants/theme";
 
 import am from "../../translations/am";
 import en from "../../translations/en";
@@ -23,7 +24,7 @@ export default function ScreenLayout() {
       ? "NotoSans-Bold"
       : "NotoSans-Regular";
 
-  let t = en;
+  let t: any = en;
   if (language === "አማርኛ") t = am;
   else if (language === "Afaan Oromo") t = or;
   else if (language === "Af Somali") t = so;
@@ -48,15 +49,7 @@ export default function ScreenLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F2F4F7" }}>
-      {/* @ts-ignore */}
-      <StatusBar style="light" backgroundColor="#8DB048" />
-      {Platform.OS === "android" && (
-        <RNStatusBar
-          translucent
-          backgroundColor="#8DB048"
-          barStyle="light-content"
-        />
-      )}
+      <AppStatusBar />
 
       <Stack
         screenOptions={{
@@ -66,7 +59,7 @@ export default function ScreenLayout() {
           contentStyle: { backgroundColor: "#F2F4F7" },
 
           headerStyle: {
-            backgroundColor: "#8DB048",
+            backgroundColor: NAV_HEADER_GREEN,
           },
 
           headerTitleAlign: "center",

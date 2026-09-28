@@ -1,4 +1,4 @@
-import { Text, View, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import { Text, View, RefreshControl, TouchableOpacity } from "react-native";
 import Navbar from "../../component/Navbar";
 import ImmersiveNavScreen from "../../component/ImmersiveNavScreen";
 import { MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
@@ -11,12 +11,8 @@ import { Image } from "expo-image";
 import { resolveAuctionImage } from "../../utils/auctionMedia";
 import { StatusBar } from "expo-status-bar";
 import { useCheretaCache } from "../../store/cheretaCache";
-import { LEMON_GREEN } from "../../constants/theme";
-
-function maskPhone(phone?: string | null) {
-  if (!phone || phone.length < 6) return "—";
-  return phone.slice(0, 4) + "****" + phone.slice(-2);
-}
+import { LEMON_GREEN, LEMON_GREEN_DARK, CH_VIEW_MORE_BLUE } from "../../constants/theme";
+import { formatAuctionShortDescription } from "../../utils/auctionDescription";
 
 export default function WinnerScreen() {
   const language = useAuthStore((state) => state.language);
@@ -43,7 +39,7 @@ export default function WinnerScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchData();
-      const interval = setInterval(fetchData, 15000);
+      const interval = setInterval(fetchData, 8000);
       return () => clearInterval(interval);
     }, [fetchData]),
   );
@@ -70,78 +66,102 @@ export default function WinnerScreen() {
           refreshControl: <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={LEMON_GREEN} />,
         }}
       >
-        <Text style={[regular, { color: "#6B7280", marginBottom: 12, textAlign: "center" }]}>
-          {winners.length} {t.winners || "winners"}
-        </Text>
-
         {winners.length === 0 ? (
           <Text style={[regular, { textAlign: "center", color: "#666", marginTop: 40 }]}>{t.noWinnersYet}</Text>
         ) : (
-          winners.map((item, index) => (
-            <View
-              key={item.auction.id || index}
-              style={{
-                backgroundColor: "#fff",
-                borderRadius: 24,
-                marginBottom: 20,
-                shadowColor: "#000",
-                shadowOpacity: 0.1,
-                shadowRadius: 10,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
-                overflow: "hidden",
-              }}
-            >
-              <View style={{ position: "relative", backgroundColor: "#F9FAFB" }}>
+          winners.map((item, index) => {
+            const auction = item.auction;
+            const winAmount = item.winner?.amount ?? auction?.winningAmount;
+            const hasWinner = winAmount != null && item.winner;
+            const description = formatAuctionShortDescription(auction?.specs, auction?.categoryLabel);
+
+            return (
+              <View
+                key={auction?.id || index}
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 20,
+                  marginBottom: 22,
+                  borderWidth: 1,
+                  borderColor: "#E5E7EB",
+                  overflow: "hidden",
+                  shadowColor: "#000",
+                  shadowOpacity: 0.08,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 4,
+                }}
+              >
                 <Image
-                  source={resolveAuctionImage(item.auction.images?.[0])}
-                  style={{ height: 210, width: "100%" }}
+                  source={resolveAuctionImage(auction?.images?.[0])}
+                  style={{ width: "100%", height: 220 }}
                   contentFit="cover"
                 />
-                <View style={{ position: "absolute", top: 12, left: 12, backgroundColor: "rgba(255, 255, 255, 0.95)", borderRadius: 20, padding: 8, flexDirection: "row", alignItems: "center" }}>
-                  <FontAwesome5 name="trophy" size={14} color="#F59E0B" />
-                </View>
-                <View style={{ position: "absolute", top: 12, right: 12, backgroundColor: "rgba(255, 255, 255, 0.95)", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 }}>
-                  <Text style={[bold, { fontSize: 11, color: "#3D5D96" }]}>
-                    {t.auctionCode} {item.auction.auctionCode}
-                  </Text>
-                </View>
-              </View>
 
-              <View style={{ padding: 18 }}>
-                <Text style={[bold, { fontSize: 19, color: "#111827", textAlign: "center", marginBottom: 14 }]} numberOfLines={2}>
-                  {item.auction.title}
-                </Text>
-
-                {item.winner && (
-                  <View style={{ backgroundColor: "#F0FDF4", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#DCFCE7" }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-                      <FontAwesome5 name="crown" size={18} color="#F59E0B" />
-                      <Text style={[bold, { marginLeft: 10, color: "#166534", fontSize: 17 }]}>{item.winner.name}</Text>
-                    </View>
-                    <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 12 }}>
-                      <Text style={[bold, { color: LEMON_GREEN, fontSize: 16 }]}>
-                        {item.winner.amount.toFixed(2)} ETB
-                      </Text>
-                      <View style={{ height: 4, width: 4, borderRadius: 2, backgroundColor: "#86EFAC" }} />
-                      <Text style={[bold, { color: "#166534", fontSize: 14 }]}>
-                        {maskPhone(item.winner.phone)}
+                <View style={{ padding: 16 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      backgroundColor: "#ECFCCB",
+                      borderRadius: 999,
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      marginBottom: 14,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}>
+                      <FontAwesome5 name="trophy" size={16} color="#CA8A04" />
+                      <Text style={[bold, { marginLeft: 8, color: LEMON_GREEN_DARK, fontSize: 16 }]}>
+                        {hasWinner ? t.winnerLabel || "Winner" : t.noWinnerLabel || "No winner"}
                       </Text>
                     </View>
+                    {hasWinner ? (
+                      <View
+                        style={{
+                          backgroundColor: LEMON_GREEN_DARK,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 999,
+                        }}
+                      >
+                        <Text style={[bold, { color: "#fff", fontSize: 12 }]}>
+                          {t.wonFor || "Won for"} {Number(winAmount).toFixed(2)} ETB
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
-                )}
 
-                <TouchableOpacity
-                  style={{ marginTop: 18, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 6 }}
-                  onPress={() => router.push(`/screen/auction_results?id=${item.auction.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[bold, { color: "#3D5D96", fontSize: 15 }]}>{t.viewResults || "View Results"}</Text>
-                  <MaterialCommunityIcons name="arrow-right" size={16} color="#3D5D96" />
-                </TouchableOpacity>
+                  {description ? (
+                    <Text style={[regular, { color: "#6B7280", fontSize: 14, lineHeight: 21, marginBottom: 10 }]}>
+                      {description}
+                    </Text>
+                  ) : null}
+
+                  <Text style={[bold, { fontSize: 18, color: "#111827", marginBottom: 16, lineHeight: 24 }]}>
+                    {auction?.title}
+                  </Text>
+
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: CH_VIEW_MORE_BLUE,
+                      paddingVertical: 14,
+                      borderRadius: 999,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    onPress={() => router.push(`/screen/auction_results?id=${auction?.id}`)}
+                    activeOpacity={0.88}
+                  >
+                    <Text style={[bold, { color: "#fff", fontSize: 16 }]}>
+                      {t.viewAuction || "View Auction"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))
+            );
+          })
         )}
       </ImmersiveNavScreen>
     </View>

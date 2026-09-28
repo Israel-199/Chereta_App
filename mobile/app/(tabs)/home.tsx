@@ -27,10 +27,12 @@ import { placeBidWithTerms } from "../../utils/placeBidFlow";
 import { useCheretaStore } from "../../store/cheretaStore";
 import { useCheretaCache } from "../../store/cheretaCache";
 import Toast from "react-native-toast-message";
-import { LEMON_GREEN, CH_SUBMIT_GREEN, CH_VIEW_MORE_BLUE, CH_TIMER_RED, CH_SUBMIT_GREEN_DARK } from "../../constants/theme";
+import { LEMON_GREEN, CH_SUBMIT_GREEN, CH_VIEW_MORE_BLUE, CH_SUBMIT_GREEN_DARK } from "../../constants/theme";
 import CheretaBidInput from "../../component/CheretaBidInput";
 import CheretaSectionHeader from "../../component/CheretaSectionHeader";
+import AuctionMetricCarousel, { buildAuctionMetrics } from "../../component/AuctionMetricCarousel";
 import { formatAuctionCodeDisplay } from "../../utils/formatAuctionCode";
+import { CH_MIN_BID_ETB, CH_DEFAULT_MAX_BID } from "../../constants/bidding";
 
 
 
@@ -93,18 +95,39 @@ const AuctionCarousel = ({
   );
 
   const getBidAmount = (item: AuctionItem) =>
-    bidAmounts[item.id] ?? (item.minBid ?? 1.01).toFixed(2);
+    bidAmounts[item.id] ?? String(Math.max(CH_MIN_BID_ETB, item.minBid ?? CH_MIN_BID_ETB));
+
+  const cardBidDisplay = (item: AuctionItem) => {
+    if (item.userHasBid && item.userBidAmount != null) {
+      return `${item.userBidAmount.toFixed(2)} ETB`;
+    }
+    const raw = getBidAmount(item);
+    const n = parseFloat(raw);
+    return `${Number.isNaN(n) ? CH_MIN_BID_ETB : n} ETB`;
+  };
 
   const runBid = async (item: AuctionItem) => {
+    if (item.userHasBid) return;
     const amount = parseFloat(getBidAmount(item));
-    if (isNaN(amount)) return;
+    if (isNaN(amount) || amount < CH_MIN_BID_ETB) {
+      Toast.show({ type: "error", text1: t.minBidHint || "Min. bid: 1 ETB" });
+      return;
+    }
     setSubmittingId(item.id);
     try {
       await placeBidWithTerms(item.id, amount);
-      onAuctionsPatch(item.id, { userHasBid: true, bidCount: (item.bidCount ?? 0) + 1 });
+      onAuctionsPatch(item.id, {
+        userHasBid: true,
+        userBidAmount: amount,
+        bidCount: (item.bidCount ?? 0) + 1,
+      });
       useCheretaStore.getState().bumpMyBids();
       onBidPlaced();
-      Toast.show({ type: "success", text1: t.bidSuccessTitle || "Bid placed", text2: t.bidClosedForYou });
+      Toast.show({
+        type: "success",
+        text1: t.bidSuccessTitle || "Bid placed",
+        text2: `${item.title} — ${amount.toFixed(2)} ETB`,
+      });
     } catch (e: any) {
       Toast.show({ type: "error", text1: e?.response?.data?.message || e?.message || "Bid failed" });
     } finally {
@@ -217,11 +240,17 @@ const AuctionCarousel = ({
                       paddingHorizontal: 12,
                       paddingVertical: 6,
                       borderRadius: 20,
+                      maxWidth: "55%",
                     }}
                   >
-                    <MaterialCommunityIcons name="eye-outline" size={16} color="#3D5D96" />
-                    <Text style={[bold, { marginLeft: 6, fontSize: 12, color: "#3D5D96" }]}>
-                      {item.termsAcceptedCount ?? 0}
+                    <MaterialCommunityIcons name="cash" size={16} color="#3D5D96" />
+                    <Text
+                      style={[bold, { marginLeft: 6, fontSize: 12, color: "#3D5D96", flexShrink: 1 }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.75}
+                    >
+                      {cardBidDisplay(item)}
                     </Text>
                   </View>
                 </View>
@@ -233,57 +262,28 @@ const AuctionCarousel = ({
 
                   <View
                     style={{
-                      backgroundColor: "#F9FAFB",
+                      backgroundColor: "#fff",
                       borderRadius: 16,
-                      padding: 14,
+                      padding: 12,
                       borderWidth: 1,
                       borderColor: "#F3F4F6",
                     }}
                   >
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
-                      <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
-                        <View style={{ backgroundColor: "#ECFCCB", borderRadius: 12, width: 28, height: 28, justifyContent: "center", alignItems: "center", marginRight: 8 }}>
-                          <MaterialCommunityIcons name="gavel" size={14} color="#65A30D" />
-                        </View>
-                        <View>
-                          <Text style={[regular, { color: "#6B7280", fontSize: 11 }]}>{t.bidServiceFee}</Text>
-                          <Text style={[bold, { color: "#111827", fontSize: 14 }]}>{(item.serviceFee ?? 75).toFixed(2)} Br</Text>
-                        </View>
-                      </View>
-                      <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
-                        <View style={{ alignItems: "flex-end" }}>
-                          <Text style={[regular, { color: "#6B7280", fontSize: 11 }]}>{t.auctionCode}</Text>
-                          <Text style={[bold, { color: "#111827", fontSize: 14 }]}>
-                            {formatAuctionCodeDisplay(item.auctionCode)}
-                          </Text>
-                        </View>
-                        <View style={{ backgroundColor: "#DBEAFE", borderRadius: 12, width: 28, height: 28, justifyContent: "center", alignItems: "center", marginLeft: 8 }}>
-                          <MaterialCommunityIcons name="tag-outline" size={14} color="#2563EB" />
-                        </View>
-                      </View>
-                    </View>
-                    
-                    <View style={{ height: 1, backgroundColor: "#E5E7EB", marginBottom: 12 }} />
-
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                        <MaterialCommunityIcons
-                          name={ended ? "clock-outline" : "timer-outline"}
-                          size={18}
-                          color={ended ? "#9CA3AF" : CH_TIMER_RED}
-                          style={{ marginRight: 6 }}
-                        />
-                        <Text style={[bold, { color: ended ? "#9CA3AF" : CH_TIMER_RED, fontSize: 15 }]}>
-                          {ended ? t.auctionEnded : countdown}
-                        </Text>
-                      </View>
-                      <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <MaterialCommunityIcons name="history" size={16} color="#3D5D96" style={{ marginRight: 4 }} />
-                        <Text style={[bold, { color: "#3D5D96" }]}>
-                          {item.bidCount ?? 0} {t.bidsLabel}
-                        </Text>
-                      </View>
-                    </View>
+                    <AuctionMetricCarousel
+                      bold={bold}
+                      regular={regular}
+                      metrics={buildAuctionMetrics({
+                        serviceFeeLabel: t.bidServiceFee,
+                        serviceFee: item.serviceFee ?? 75,
+                        codeLabel: t.auctionCode,
+                        auctionCode: formatAuctionCodeDisplay(item.auctionCode),
+                        ended,
+                        countdown,
+                        endedLabel: t.auctionEnded,
+                        bidsLabel: t.bidsLabel,
+                        bidCount: item.bidCount ?? 0,
+                      })}
+                    />
                   </View>
 
                   {!ended && (
@@ -293,9 +293,10 @@ const AuctionCarousel = ({
                         label={t.enterBidAmountLabel || "Enter bid amount"}
                         value={getBidAmount(item)}
                         disabled={hasBid || isSubmitting}
-                        min={item.minBid ?? 1.01}
-                        max={item.maxBid ?? 999.99}
-                        step={item.bidStep ?? 0.01}
+                        min={CH_MIN_BID_ETB}
+                        max={item.maxBid ?? CH_DEFAULT_MAX_BID}
+                        step={item.bidStep ?? 1}
+                        minHint={t.minBidHint || "Min. bid: 1 ETB"}
                         onChange={(v) => setBidAmounts((p) => ({ ...p, [item.id]: v }))}
                         confirmLabel={t.done || "OK"}
                       />
@@ -403,6 +404,8 @@ const AuctionCarousel = ({
         visible={!!termsAuction}
         language={language}
         t={t}
+        auctionTitle={termsAuction?.title}
+        bidAmount={termsAuction ? getBidAmount(termsAuction) : undefined}
         onClose={() => setTermsAuction(null)}
         onConfirm={async () => {
           if (termsAuction) await runBid(termsAuction);

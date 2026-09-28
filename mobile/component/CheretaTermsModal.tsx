@@ -28,7 +28,7 @@ export default function CheretaTermsModal({ visible, language, t, onClose, onCon
   const { bold, regular, fontFamily } = useLocalizedTypography(language);
 
   const handleContinue = async () => {
-    if (!accepted) return;
+    if (!accepted || loading) return;
     setLoading(true);
     try {
       await onConfirm();
@@ -46,13 +46,17 @@ export default function CheretaTermsModal({ visible, language, t, onClose, onCon
           
           <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
             <View style={styles.infoBox}>
-              <Text style={[bold, styles.infoLabel]}>{t.auctionItemLabel || "Auction Item: The brand of the item you are bidding on"}</Text>
-              <Text style={[regular, styles.infoValue]}>{auctionTitle ?? "—"}</Text>
+              <Text style={[regular, styles.infoLabel]}>{t.auctionItemLabel || "Item"}</Text>
+              <Text style={[bold, styles.infoValue]} numberOfLines={3}>
+                {auctionTitle?.trim() || " "}
+              </Text>
             </View>
 
             <View style={styles.infoBox}>
-              <Text style={[bold, styles.infoLabel]}>{t.yourBidAmountLabel || "Your Bid Amount: The amount you entered for this bid"}</Text>
-              <Text style={[bold, styles.infoValue, { color: LEMON_GREEN, fontSize: 18 }]}>{bidAmount ? `${bidAmount} ETB` : "—"}</Text>
+              <Text style={[regular, styles.infoLabel]}>{t.yourBidAmountLabel || "Your bid"}</Text>
+              <Text style={[bold, styles.infoValue, { color: LEMON_GREEN, fontSize: 20 }]}>
+                {bidAmount ? `${bidAmount} ETB` : ""}
+              </Text>
             </View>
 
             <View style={styles.infoBox}>

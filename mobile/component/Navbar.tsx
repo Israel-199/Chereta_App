@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from "react";
-import { View, Text, TouchableOpacity, Platform, StatusBar as RNStatusBar } from "react-native";
+import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { NAV_HEADER_GREEN } from "@/constants/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLoginScreenStyles } from "@/styles/loginScreenStyles";
@@ -101,9 +101,6 @@ const Navbar = ({
     <View style={{ width: "100%", backgroundColor: "transparent" }}>
       <View style={shadowHostStyle}>
         <View style={shellStyle}>
-          {Platform.OS === "android" && (
-            <RNStatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-          )}
           <View style={innerBarStyle}>
             <View style={styles.navLeft}>
               {leftIcon && (

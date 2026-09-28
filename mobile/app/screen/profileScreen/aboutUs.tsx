@@ -87,43 +87,11 @@ export default function AboutUsScreen() {
           {/* OUR STORY / ABOUT US SECTION */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <MaterialCommunityIcons name="information" size={24} color="#8DB048" />
-              <Text style={[styles.cardTitle, { fontFamily: getFontFamily(true) }]}>
-                {t.ourStory || "Our Story"}
-              </Text>
             </View>
             <Text style={[styles.cardBody, { fontFamily: getFontFamily(false) }]}>
-              {t.aboutUsDescription || "Habesha Equb Financial Technology PLC is a legally registered Ethiopian technology company pioneering the digitization of traditional rotating savings. By blending cultural heritage with secure mobile technology, the company provides a transparent, automated, and 100% guaranteed platform for communal saving."}
+              {"Digital Chereta is an Ethiopian digital auction platform that allows users to participate in online auctions for a variety of products. Our Unique Lowest Bid model gives participants the opportunity to win by submitting the lowest unique bid. The minimum bid starts at 1 ETB."}
             </Text>
           </View>
-
-          {/* MISSION & VISION */}
-          <View style={styles.row}>
-            <View style={[styles.card, styles.smallCard]}>
-              <View style={styles.iconCircle}>
-                <MaterialCommunityIcons name="target" size={30} color="#8DB048" />
-              </View>
-              <Text style={[styles.cardTitleSmall, { fontFamily: getFontFamily(true) }]}>
-                {t.mission || "Mission"}
-              </Text>
-              <Text style={[styles.cardBodySmall, { fontFamily: getFontFamily(false) }]}>
-                {t.missionDescription || "To modernize traditional saving through secure digital, and transparent financial technology."}
-              </Text>
-            </View>
-
-            <View style={[styles.card, styles.smallCard]}>
-              <View style={[styles.iconCircle, { backgroundColor: "#E0F2FE" }]}>
-                <Ionicons name="eye-outline" size={30} color="#0284C7" />
-              </View>
-              <Text style={[styles.cardTitleSmall, { fontFamily: getFontFamily(true) }]}>
-                {t.vision || "Vision"}
-              </Text>
-              <Text style={[styles.cardBodySmall, { fontFamily: getFontFamily(false) }]}>
-                {t.visionDescription || "To be the trusted leader in digital community savings and financial inclusion."}
-              </Text>
-            </View>
-          </View>
-
           {/* FOOTER */}
           <View style={styles.footer}>
             <Text style={[styles.footerText, { fontFamily: getFontFamily(false) }]}>
@@ -150,7 +118,7 @@ const styles = StyleSheet.create({
   heroSection: {
     alignItems: "center",
     paddingVertical: 50,
-    backgroundColor: "#8DB048",
+    backgroundColor: "#3D5D96",
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
   },

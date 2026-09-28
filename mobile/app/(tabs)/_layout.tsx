@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { useNotificationStore } from "../../store/notificationStore";
 import api from "../../api/axiosClient";
-import { StatusBar } from "expo-status-bar";
+import AppStatusBar from "../../component/AppStatusBar";
 import { TAB_BAR_WHITE, TAB_ACTIVE_BLUE, LEMON_GREEN } from "../../constants/theme";
 import { runWhenIdle } from "../../utils/runWhenIdle";
 
@@ -149,8 +149,7 @@ const TabsLayout = () => {
   return (
     <View style={{ flex: 1, backgroundColor: "#F2F4F7" }}>
       {Platform.OS === "android" && <NavigationBar style="dark" hidden={false} />}
-      {/* @ts-ignore */}
-      <StatusBar style="light" backgroundColor={LEMON_GREEN} translucent={Platform.OS === "android"} />
+      <AppStatusBar />
       <Tabs screenOptions={screenOptions}>
         <Tabs.Screen name="home" listeners={homeListeners} options={{ title: t.homeTab, tabBarIcon: homeIcon, lazy: false }} />
         <Tabs.Screen name="mychereta" listeners={myCheretaListeners} options={{ title: t.myChereta || "My Chereta", tabBarIcon: myCheretaIcon, lazy: false }} />
