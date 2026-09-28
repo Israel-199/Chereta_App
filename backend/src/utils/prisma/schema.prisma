@@ -232,6 +232,7 @@ model AuctionItem {
   winnerUserId  String?
   winningAmount Float?
   resolvedAt    DateTime?
+  twoHourAlertSent Boolean @default(false)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   bids            Bid[]

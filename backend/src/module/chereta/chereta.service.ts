@@ -2,6 +2,7 @@ import prisma from "../../utils/prisma/prisma";
 import { AuctionCategory, AuctionStatus } from "@prisma/client";
 
 export const syncExpiredAuctions = async () => {
+  await sendTwoHourBidderAlerts();
   const now = new Date();
   const expired = await prisma.auctionItem.findMany({
     where: {
@@ -12,6 +13,48 @@ export const syncExpiredAuctions = async () => {
 
   for (const auction of expired) {
     await resolveAuctionWinner(auction.id);
+  }
+};
+
+const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+
+/** Notify users who placed a bid when ≤2 hours remain (once per auction). */
+export const sendTwoHourBidderAlerts = async () => {
+  const now = new Date();
+  const withinTwoHours = new Date(now.getTime() + TWO_HOURS_MS);
+
+  const auctions = await prisma.auctionItem.findMany({
+    where: {
+      status: "ACTIVE",
+      twoHourAlertSent: false,
+      endTime: { gt: now, lte: withinTwoHours },
+    },
+  });
+
+  for (const auction of auctions) {
+    const bidders = await prisma.bid.findMany({
+      where: { auctionItemId: auction.id },
+      select: { userId: true },
+      distinct: ["userId"],
+    });
+
+    if (bidders.length) {
+      await prisma.notificationLog.createMany({
+        data: bidders.map(({ userId }) => ({
+          userId,
+          type: "AUCTION_2H",
+          channel: "IN_APP",
+          status: "SENT",
+          title: "2 hours left",
+          message: `${auction.title} ends in about 2 hours. Your bid is still in the running.`,
+        })),
+      });
+    }
+
+    await prisma.auctionItem.update({
+      where: { id: auction.id },
+      data: { twoHourAlertSent: true },
+    });
   }
 };
 
@@ -48,10 +91,33 @@ export const resolveAuctionWinner = async (auctionItemId: string) => {
           channel: "IN_APP",
           status: "SENT",
           title: "Congratulations!",
-          message: `You won the auction: ${auction.title}`,
+          message: `You won ${auction.title} with a bid of ${winningAmount!.toFixed(2)} ETB`,
         },
       });
     }
+  }
+
+  const participantIds = await prisma.bid.findMany({
+    where: { auctionItemId },
+    select: { userId: true },
+    distinct: ["userId"],
+  });
+
+  const notifyIds = participantIds
+    .map((p) => p.userId)
+    .filter((uid) => uid !== winnerUserId);
+
+  if (notifyIds.length) {
+    await prisma.notificationLog.createMany({
+      data: notifyIds.map((userId) => ({
+        userId,
+        type: "AUCTION_ENDED",
+        channel: "IN_APP",
+        status: "SENT",
+        title: "Winner revealed",
+        message: `${auction.title} — Winner revealed. Check the Winner screen.`,
+      })),
+    });
   }
 
   return prisma.auctionItem.update({
@@ -86,13 +152,19 @@ const enrichAuctionList = async (items: any[], userId?: string) => {
   const termsMap = new Map(termsGroups.map((g) => [g.auctionItemId, g._count._all]));
 
   let userBidSet = new Set<string>();
+  const userBidAmountMap = new Map<string, number>();
   if (userId) {
     const userBids = await prisma.bid.findMany({
       where: { userId, auctionItemId: { in: ids } },
-      select: { auctionItemId: true },
-      distinct: ["auctionItemId"],
+      select: { auctionItemId: true, amount: true },
+      orderBy: { createdAt: "desc" },
     });
-    userBidSet = new Set(userBids.map((b) => b.auctionItemId));
+    for (const b of userBids) {
+      userBidSet.add(b.auctionItemId);
+      if (!userBidAmountMap.has(b.auctionItemId)) {
+        userBidAmountMap.set(b.auctionItemId, b.amount);
+      }
+    }
   }
 
   return items.map((item) => ({
@@ -100,6 +172,7 @@ const enrichAuctionList = async (items: any[], userId?: string) => {
     bidCount: bidMap.get(item.id) ?? 0,
     termsAcceptedCount: termsMap.get(item.id) ?? 0,
     userHasBid: userId ? userBidSet.has(item.id) : false,
+    userBidAmount: userId ? userBidAmountMap.get(item.id) ?? null : null,
   }));
 };
 
@@ -167,14 +240,30 @@ export const placeBid = async (
     throw new Error("Auction is not active or has ended");
   }
 
-  if (amount < auction.minBid || amount > auction.maxBid) {
-    throw new Error(`Bid must be between ${auction.minBid} and ${auction.maxBid} ETB`);
+  if (amount < 1) {
+    throw new Error("Minimum bid is 1 ETB");
   }
 
-  const step = auction.bidStep || 0.01;
-  const rounded = Math.round(amount / step) * step;
-  if (Math.abs(rounded - amount) > 0.001) {
-    throw new Error(`Bid must be in steps of ${step}`);
+  const maxAllowed = auction.maxBid ?? 999999;
+  if (amount > maxAllowed) {
+    throw new Error(`Bid must not exceed ${maxAllowed} ETB`);
+  }
+
+  const step = auction.bidStep ?? 1;
+  let rounded: number;
+  if (step >= 1) {
+    rounded = Math.round(amount);
+    if (rounded < 1) rounded = 1;
+  } else {
+    rounded = Math.round(amount / step) * step;
+    rounded = Math.round(rounded * 100) / 100;
+  }
+
+  const existingBid = await prisma.bid.findFirst({
+    where: { userId, auctionItemId },
+  });
+  if (existingBid) {
+    throw new Error("You have already placed a bid on this auction");
   }
 
   let paymentId: string | undefined;
@@ -202,7 +291,7 @@ export const placeBid = async (
       channel: "IN_APP",
       status: "SENT",
       title: "Bid placed",
-      message: `Your bid of ${rounded} ETB was recorded for ${auction.title}`,
+      message: `Your bid of ${rounded.toFixed(2)} ETB on ${auction.title} was recorded successfully.`,
     },
   });
 
@@ -368,9 +457,9 @@ export const createAuction = async (data: any) => {
       specs: data.specs,
       images: data.images || [],
       serviceFee: data.serviceFee ?? 75,
-      minBid: data.minBid ?? 1.01,
-      maxBid: data.maxBid ?? 999.99,
-      bidStep: data.bidStep ?? 0.01,
+      minBid: data.minBid ?? 1,
+      maxBid: data.maxBid ?? 999999,
+      bidStep: data.bidStep ?? 1,
       startTime: new Date(data.startTime),
       endTime: new Date(data.endTime),
       status: (data.status as AuctionStatus) || "ACTIVE",

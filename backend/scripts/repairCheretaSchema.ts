@@ -14,6 +14,7 @@ const migrations = [
   "20260924120000_chereta_chapa_payments",
   "20260924140000_auction_terms_acceptance",
   "20260925100000_auction_code_chr_string",
+  "20260927120000_auction_two_hour_alert",
 ];
 
 function run(cmd: string) {
