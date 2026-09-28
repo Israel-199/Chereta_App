@@ -339,6 +339,8 @@ enum NotificationType {
   PAYOUT_CONFIRMED
   BID_PLACED
   AUCTION_WON
+  AUCTION_2H
+  AUCTION_ENDED
 }
 
 enum NotificationChannel {
