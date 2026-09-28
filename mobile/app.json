@@ -15,7 +15,7 @@
       "fallbackToCacheTimeout": 3000
     },
     "android": {
-      "package": "com.isru.HabeshaEqub",
+      "package": "com.isru.digitalchereta",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -29,7 +29,7 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "com.isru.HabeshaEqub",
+      "bundleIdentifier": "com.isru.digitalchereta",
       "supportsTablet": true,
       "buildNumber": "1",
       "infoPlist": {
@@ -62,7 +62,6 @@
       [
         "expo-navigation-bar",
         {
-          "position": "absolute",
           "backgroundColor": "#000000",
           "borderColor": "#000000",
           "barStyle": "light"
@@ -80,7 +79,6 @@
         "projectId": "884df8ac-6e71-41d2-a8dd-fe8c7b316444"
       },
       "expo-navigation-bar": {
-        "position": "absolute",
         "backgroundColor": "#000000",
         "borderColor": "#000000",
         "barStyle": "light",

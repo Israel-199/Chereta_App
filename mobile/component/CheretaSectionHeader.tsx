@@ -11,8 +11,8 @@ type Props = {
   variant?: Variant;
   icon?: keyof typeof MaterialCommunityIcons.glyphMap;
   style?: StyleProp<ViewStyle>;
-  bold: { fontFamily: string };
-  regular: { fontFamily: string };
+  bold: any;
+  regular: any;
 };
 
 function CheretaSectionHeader({
@@ -61,10 +61,10 @@ function CheretaSectionHeader({
           >
             <MaterialCommunityIcons name="fire" size={22} color={LEMON_GREEN} />
           </View>
-          <Text style={[bold, { flex: 1, fontSize: 22, color: "#111827", lineHeight: 28 }]}>{title}</Text>
+          <Text style={[bold, { flex: 1, fontSize: 22, color: "#111827", paddingVertical: 2 }]}>{title}</Text>
         </View>
         {subtitle ? (
-          <Text style={[regular, { fontSize: 14, color: "#6B7280", lineHeight: 21, paddingLeft: 52 }]}>
+          <Text style={[regular, { fontSize: 14, color: "#6B7280", paddingLeft: 52, paddingVertical: 2 }]}>
             {subtitle}
           </Text>
         ) : null}
@@ -96,9 +96,9 @@ function CheretaSectionHeader({
           <MaterialCommunityIcons name={icon} size={22} color={LEMON_GREEN} />
         </View>
         <View style={{ flex: 1, paddingTop: 2 }}>
-          <Text style={[bold, { fontSize: 19, color: "#111827", marginBottom: 4 }]}>{title}</Text>
+          <Text style={[bold, { fontSize: 19, color: "#111827", marginBottom: 2, paddingVertical: 2 }]}>{title}</Text>
           {subtitle ? (
-            <Text style={[regular, { fontSize: 13, color: "#6B7280", lineHeight: 19 }]}>{subtitle}</Text>
+            <Text style={[regular, { fontSize: 13, color: "#6B7280", paddingVertical: 2 }]}>{subtitle}</Text>
           ) : null}
           <View
             style={{

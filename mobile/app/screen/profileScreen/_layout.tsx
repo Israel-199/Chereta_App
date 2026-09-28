@@ -21,7 +21,7 @@ export default function ProfileLayout() {
       ? "NotoSans-Bold"
       : "NotoSans-Regular";
 
-  let t = en;
+  let t: Record<string, any> = en;
   if (language === "አማርኛ") t = am;
   else if (language === "Afaan Oromo") t = or;
   else if (language === "Af Somali") t = so;

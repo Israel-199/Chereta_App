@@ -232,17 +232,16 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
   amountScroll: {
-    flexGrow: 1,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    minWidth: 140,
-    maxWidth: 200,
   },
   sheetAmount: {
-    fontSize: 34,
+    fontSize: 30,
     color: CH_VIEW_MORE_BLUE,
     textAlign: "center",
     paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   hint: {
     textAlign: "center",

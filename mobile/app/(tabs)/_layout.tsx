@@ -148,7 +148,7 @@ const TabsLayout = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F2F4F7" }}>
-      {Platform.OS === "android" && <NavigationBar style="dark" hidden={false} />}
+      {Platform.OS === "android" && <NavigationBar style="light" hidden={false} />}
       <AppStatusBar />
       <Tabs screenOptions={screenOptions}>
         <Tabs.Screen name="home" listeners={homeListeners} options={{ title: t.homeTab, tabBarIcon: homeIcon, lazy: false }} />

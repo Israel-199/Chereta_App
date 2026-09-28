@@ -34,8 +34,8 @@ type Props = {
     duplicateLegend: string;
     tableTitle: string;
   };
-  bold: { fontFamily: string };
-  regular: { fontFamily: string };
+  bold: any;
+  regular: any;
 };
 
 function CheretaResultsTable({ rows, labels, bold, regular }: Props) {

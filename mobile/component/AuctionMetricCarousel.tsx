@@ -16,8 +16,8 @@ type Metric = {
 
 type Props = {
   metrics: Metric[];
-  bold: { fontFamily: string };
-  regular: { fontFamily: string };
+  bold: any;
+  regular: any;
 };
 
 function AuctionMetricCarousel({ metrics, bold, regular }: Props) {
@@ -26,14 +26,14 @@ function AuctionMetricCarousel({ metrics, bold, regular }: Props) {
       horizontal
       showsHorizontalScrollIndicator={false}
       decelerationRate="fast"
-      snapToInterval={168}
+      snapToInterval={142}
       contentContainerStyle={{ paddingVertical: 4, paddingRight: 8, gap: 10 }}
     >
       {metrics.map((m) => (
         <View
           key={m.key}
           style={{
-            width: 158,
+            width: 132,
             backgroundColor: "#F9FAFB",
             borderRadius: 14,
             borderWidth: 1,

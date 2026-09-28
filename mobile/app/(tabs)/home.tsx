@@ -33,6 +33,7 @@ import CheretaSectionHeader from "../../component/CheretaSectionHeader";
 import AuctionMetricCarousel, { buildAuctionMetrics } from "../../component/AuctionMetricCarousel";
 import { formatAuctionCodeDisplay } from "../../utils/formatAuctionCode";
 import { CH_MIN_BID_ETB, CH_DEFAULT_MAX_BID } from "../../constants/bidding";
+import CheretaRulesMarquee from "../../component/CheretaRulesMarquee";
 
 
 
@@ -243,14 +244,14 @@ const AuctionCarousel = ({
                       maxWidth: "55%",
                     }}
                   >
-                    <MaterialCommunityIcons name="cash" size={16} color="#3D5D96" />
+                    <MaterialCommunityIcons name="gavel" size={16} color="#3D5D96" />
                     <Text
-                      style={[bold, { marginLeft: 6, fontSize: 12, color: "#3D5D96", flexShrink: 1 }]}
+                      style={[bold, { marginLeft: 6, fontSize: 13, color: "#3D5D96", flexShrink: 1 }]}
                       numberOfLines={1}
                       adjustsFontSizeToFit
                       minimumFontScale={0.75}
                     >
-                      {cardBidDisplay(item)}
+                      {item.bidCount ?? 0} {t.bidsLabel || "Bids"}
                     </Text>
                   </View>
                 </View>
@@ -498,10 +499,8 @@ export default function HomeScreen() {
           refreshControl: <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3D5D96" />,
         }}
       >
-        <CheretaSectionHeader
-          variant="hero"
-          title={t.activeAuctionsTitle || "Active Auctions"}
-          subtitle={t.activeAuctionsSubtitle}
+        <CheretaRulesMarquee
+          t={t}
           bold={bold}
           regular={regular}
         />
