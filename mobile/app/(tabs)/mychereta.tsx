@@ -83,13 +83,23 @@ export default function MyCheretaScreen() {
         {!token ? (
           <Text style={[regular, { marginTop: 40, color: "#666", textAlign: "center" }]}>{t.signInForBids}</Text>
         ) : grouped.length === 0 ? (
-          <Text style={[regular, { marginTop: 40, color: "#666", textAlign: "center" }]}>{t.noBidsYet}</Text>
+         <View
+  style={{
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+  <Text style={[regular, { color: "#666", textAlign: "center",fontSize:12 }]}>
+    {t.noBidsYet}
+  </Text>
+</View>
         ) : (
           grouped.map(({ auction, bids: userBids }) => (
             <TouchableOpacity
               key={auction.id}
               activeOpacity={0.8}
-              onPress={() => router.push(`/screen/auction_results?id=${auction.id}`)}
+              onPress={() => router.push(`/screen/auction_details?id=${auction.id}`)}
               style={{
                 backgroundColor: "#fff",
                 borderRadius: 20,
@@ -130,7 +140,7 @@ export default function MyCheretaScreen() {
               </View>
 
               <View style={{ backgroundColor: "#F9FAFB", borderRadius: 16, padding: 14 }}>
-                <Text style={[bold, { color: "#4B5563", fontSize: 12, marginBottom: 10 }]}>RECENT BIDS (MAX 5)</Text>
+                <Text style={[bold, { color: "#4B5563", fontSize: 12, marginBottom: 10 }]}>{t.recentBidsMax5 || "RECENT BIDS (MAX 5)"}</Text>
                 
                 <View style={{ paddingLeft: 6 }}>
                   {userBids.slice(0, 5).map((b, idx, arr) => (
@@ -144,7 +154,10 @@ export default function MyCheretaScreen() {
                       
                       <View style={{ flex: 1, flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
                         <Text style={[regular, { color: "#6B7280", fontSize: 13 }]}>
-                          {new Date(b.createdAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
+                          {new Intl.DateTimeFormat('en-US', {
+                            month: 'short', day: 'numeric',
+                            hour: 'numeric', minute: '2-digit', hour12: true
+                          }).format(new Date(b.createdAt))}
                         </Text>
                         <Text style={[bold, { color: "#1F2937", fontSize: 14 }]}>
                           {b.amount.toFixed(2)} ETB

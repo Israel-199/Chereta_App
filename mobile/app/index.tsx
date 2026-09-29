@@ -171,7 +171,6 @@ export default function LoginScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "white" }}>
-      {Platform.OS === "android" && <NavigationBar style="dark" hidden={false} />}
       {/* @ts-ignore */}
       <StatusBar style="light" backgroundColor={LEMON_GREEN} translucent={Platform.OS === "android"} />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>

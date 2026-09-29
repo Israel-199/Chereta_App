@@ -7,31 +7,39 @@
     "icon": "./assets/images/icon.png",
     "scheme": "digitalchereta",
     "userInterfaceStyle": "automatic",
+
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/fonts/*"
     ],
+
     "updates": {
       "fallbackToCacheTimeout": 3000
     },
+
     "android": {
       "package": "com.isru.digitalchereta",
       "versionCode": 1,
+
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
+
       "softwareKeyboardLayoutMode": "resize",
+
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "POST_NOTIFICATIONS"
       ]
     },
+
     "ios": {
       "bundleIdentifier": "com.isru.digitalchereta",
       "supportsTablet": true,
       "buildNumber": "1",
+
       "infoPlist": {
         "UIBackgroundModes": [
           "fetch",
@@ -39,14 +47,26 @@
         ]
       }
     },
+
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-video",
+
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/images/icon2.png",
+          "imageWidth": 300,
+          "resizeMode": "contain"
+        }
+      ],
+
       [
         "expo-build-properties",
         {
@@ -59,30 +79,31 @@
           }
         }
       ],
+
       [
         "expo-navigation-bar",
         {
+          "position": "relative",
+          "visibility": "visible",
           "backgroundColor": "#000000",
-          "borderColor": "#000000",
-          "barStyle": "light"
+          "borderColor": "#000000"
         }
       ],
+
       "./plugins/android-nav-fix",
+
       "expo-secure-store"
     ],
+
     "experiments": {
       "typedRoutes": true
     },
+
     "extra": {
       "router": {},
+
       "eas": {
         "projectId": "884df8ac-6e71-41d2-a8dd-fe8c7b316444"
-      },
-      "expo-navigation-bar": {
-        "backgroundColor": "#000000",
-        "borderColor": "#000000",
-        "barStyle": "light",
-        "style": "light"
       }
     }
   }

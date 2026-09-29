@@ -7,7 +7,6 @@ type Variant = "hero" | "section";
 
 type Props = {
   title: string;
-  subtitle?: string;
   variant?: Variant;
   icon?: keyof typeof MaterialCommunityIcons.glyphMap;
   style?: StyleProp<ViewStyle>;
@@ -17,7 +16,6 @@ type Props = {
 
 function CheretaSectionHeader({
   title,
-  subtitle,
   variant = "section",
   icon = "tag-multiple-outline",
   style,
@@ -47,7 +45,7 @@ function CheretaSectionHeader({
           style,
         ]}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: subtitle ? 8 : 0 }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
               width: 40,
@@ -59,21 +57,42 @@ function CheretaSectionHeader({
               marginRight: 12,
             }}
           >
-            <MaterialCommunityIcons name="fire" size={22} color={LEMON_GREEN} />
+            <MaterialCommunityIcons
+              name="fire"
+              size={22}
+              color={LEMON_GREEN}
+            />
           </View>
-          <Text style={[bold, { flex: 1, fontSize: 22, color: "#111827", paddingVertical: 2 }]}>{title}</Text>
-        </View>
-        {subtitle ? (
-          <Text style={[regular, { fontSize: 14, color: "#6B7280", paddingLeft: 52, paddingVertical: 2 }]}>
-            {subtitle}
+
+          <Text
+            style={[
+              bold,
+              {
+                flex: 1,
+                fontSize: 18,
+                color: "#111827",
+                paddingVertical: 2,
+              },
+            ]}
+          >
+            {title}
           </Text>
-        ) : null}
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={[{ marginHorizontal: 16, marginBottom: 14, marginTop: 4 }, style]}>
+    <View
+      style={[
+        {
+          marginHorizontal: 16,
+          marginBottom: 5,
+          marginTop: 4,
+        },
+        style,
+      ]}
+    >
       <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
         <View
           style={{
@@ -93,13 +112,27 @@ function CheretaSectionHeader({
             elevation: 2,
           }}
         >
-          <MaterialCommunityIcons name={icon} size={22} color={LEMON_GREEN} />
+          <MaterialCommunityIcons
+            name={icon}
+            size={22}
+            color={LEMON_GREEN}
+          />
         </View>
+
         <View style={{ flex: 1, paddingTop: 2 }}>
-          <Text style={[bold, { fontSize: 19, color: "#111827", marginBottom: 2, paddingVertical: 2 }]}>{title}</Text>
-          {subtitle ? (
-            <Text style={[regular, { fontSize: 13, color: "#6B7280", paddingVertical: 2 }]}>{subtitle}</Text>
-          ) : null}
+          <Text
+            style={[
+              bold,
+              {
+                fontSize: 18,
+                color: "#111827",
+                paddingVertical: 2,
+              },
+            ]}
+          >
+            {title}
+          </Text>
+
           <View
             style={{
               marginTop: 10,
@@ -107,6 +140,7 @@ function CheretaSectionHeader({
               width: 48,
               borderRadius: 2,
               backgroundColor: LEMON_GREEN,
+    
             }}
           />
         </View>

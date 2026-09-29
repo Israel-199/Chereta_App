@@ -10,7 +10,8 @@ type Props = {
 };
 
 export default function CheretaRulesMarquee({ t, bold, regular }: Props) {
-  const { width } = useWindowDimensions();
+  const { width: windowWidth } = useWindowDimensions();
+  const width = Math.min(windowWidth, 600);
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -23,7 +24,7 @@ export default function CheretaRulesMarquee({ t, bold, regular }: Props) {
     {
       icon: "star-circle",
       title: t.lowestUniqueBid || "Lowest Unique Bid",
-      desc: t.winnerDesc || "The winner is the participant who submits the lowest bid amount that no one else chose.",
+      desc: t.winnerDesc || "The winner is the participant who submits the lowest bid amount that no one else choose.",
     },
     {
       icon: "cash-check",
@@ -32,42 +33,44 @@ export default function CheretaRulesMarquee({ t, bold, regular }: Props) {
     },
   ];
 
-  const CARD_WIDTH = Math.min(width * 0.95, 300);
+  const CARD_WIDTH = width;
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIndex((prev) => {
         const next = (prev + 1) % rules.length;
-        scrollRef.current?.scrollTo({ x: next * (CARD_WIDTH + 12), animated: true });
+        scrollRef.current?.scrollTo({ x: next * CARD_WIDTH, animated: true });
         return next;
       });
-    }, 4500); // Auto-scroll every 4.5 seconds
+    }, 4500);
     return () => clearInterval(timer);
   }, [rules.length, CARD_WIDTH]);
 
   return (
-    <View style={styles.container}>
-      <Text style={[bold, styles.header]}>{t.howItWorks || "How it works"}</Text>
+    <View>
+      
       <ScrollView
         ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        snapToInterval={CARD_WIDTH + 12}
+        pagingEnabled
         decelerationRate="fast"
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, paddingTop: 4, gap: 12 }}
+        contentContainerStyle={{ paddingTop: 4 }}
         onMomentumScrollEnd={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.x / (CARD_WIDTH + 12));
+          const index = Math.round(e.nativeEvent.contentOffset.x / CARD_WIDTH);
           setCurrentIndex(index);
         }}
       >
         {rules.map((rule, idx) => (
-          <View key={idx} style={[styles.card, { width: CARD_WIDTH }]}>
+          <View key={idx} style={{ width: CARD_WIDTH, paddingHorizontal: 16 }}>
+            <View style={styles.card}>
             <View style={styles.iconBox}>
               <MaterialCommunityIcons name={rule.icon as any} size={22} color={LEMON_GREEN} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[bold, styles.title]}>{rule.title}</Text>
               <Text style={[regular, styles.desc]}>{rule.desc}</Text>
+            </View>
             </View>
           </View>
         ))}
@@ -77,21 +80,10 @@ export default function CheretaRulesMarquee({ t, bold, regular }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  header: {
-    fontSize: 18,
-    color: "#111827",
-    paddingHorizontal: 16,
-    marginBottom: 10,
-    marginTop: 6,
-  },
   card: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 16,
+    padding: 10,
     flexDirection: "row",
     alignItems: "stretch",
     borderLeftWidth: 4,
@@ -112,13 +104,13 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   title: {
-    fontSize: 15,
+    fontSize: 16,
     color: "#111827",
-    marginBottom: 4,
+    marginBottom: 2,
     lineHeight: 22,
   },
   desc: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#6B7280",
     lineHeight: 18,
   },

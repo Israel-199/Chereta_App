@@ -41,10 +41,10 @@ export default function AboutUsScreen() {
           left: 0,
           right: 0,
           height: 350, 
-          backgroundColor: "#8DB048",
+          backgroundColor: "#3D5D96",
         }}
       />
-      <StatusBar barStyle="light-content" backgroundColor="#8DB048" translucent />
+      <StatusBar barStyle="light-content" backgroundColor="#3D5D96" translucent />
       <Navbar
         leftIcon={
           <MaterialCommunityIcons
@@ -63,7 +63,7 @@ export default function AboutUsScreen() {
         style={{ backgroundColor: "transparent" }} 
       >
         {/* Background extension for top-overscroll on iOS/Android (Internal to Scroll) */}
-        <View style={{ height: 1000, backgroundColor: "#8DB048", position: "absolute", top: -1000, left: 0, right: 0 }} />
+        <View style={{ height: 1000, backgroundColor: "#3D5D96", position: "absolute", top: -1000, left: 0, right: 0 }} />
 
         {/* HERO SECTION */}
         <View style={styles.heroSection}>

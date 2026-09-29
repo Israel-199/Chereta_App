@@ -17,6 +17,7 @@ export interface NotificationItem {
 
 interface NotificationState {
   notifications: NotificationItem[];
+  deletedIds: string[];
   addNotification: (notification: Omit<NotificationItem, "id" | "date" | "time" | "isRead">) => void;
   setNotifications: (notifications: NotificationItem[]) => void;
   clearNotifications: () => void;
@@ -30,6 +31,7 @@ export const useNotificationStore = create<NotificationState>()(
   persist(
     (set, get) => ({
       notifications: [],
+      deletedIds: [],
       addNotification: (notif) => {
         const now = new Date();
         const newNotif: NotificationItem = {
@@ -44,8 +46,20 @@ export const useNotificationStore = create<NotificationState>()(
         }));
         Vibration.vibrate(400);
       },
-      setNotifications: (notifications) => set({ notifications }),
-      clearNotifications: () => set({ notifications: [] }),
+      setNotifications: (incoming) => set((state) => {
+        const existingMap = new Map(state.notifications.map(n => [n.id, n]));
+        const merged = incoming
+          .filter(n => !state.deletedIds.includes(n.id))
+          .map(n => {
+            const existing = existingMap.get(n.id);
+            return existing ? { ...n, isRead: existing.isRead } : n;
+          });
+        return { notifications: merged };
+      }),
+      clearNotifications: () => set((state) => ({ 
+        deletedIds: [...new Set([...state.deletedIds, ...state.notifications.map(n => n.id)])],
+        notifications: [],
+      })),
       markAsRead: (id) =>
         set((state) => ({
           notifications: state.notifications.map((n) =>
@@ -58,6 +72,7 @@ export const useNotificationStore = create<NotificationState>()(
         })),
       removeNotification: (id) =>
         set((state) => ({
+          deletedIds: [...new Set([...state.deletedIds, id])],
           notifications: state.notifications.filter((n) => n.id !== id),
         })),
       unreadCount: () => get().notifications.filter((n) => !n.isRead).length,

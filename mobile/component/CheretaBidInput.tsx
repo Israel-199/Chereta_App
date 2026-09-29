@@ -1,257 +1,364 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  View,
+  Keyboard,
   Text,
+  TextInput,
   TouchableOpacity,
-  Modal,
-  Pressable,
-  StyleSheet,
-  ScrollView,
+  View,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalizedTypography } from "../utils/useLocalizedTypography";
-import { CH_SUBMIT_GREEN, CH_TIMER_RED, CH_VIEW_MORE_BLUE } from "../constants/theme";
-import { CH_MIN_BID_ETB } from "../constants/bidding";
 
-type Props = {
+type CheretaBidInputProps = {
   language: string;
   label: string;
   value: string;
   disabled?: boolean;
   min: number;
   max: number;
-  step: number;
-  onChange: (v: string) => void;
-  confirmLabel?: string;
+  step?: number;
   minHint?: string;
+  confirmLabel?: string;
+  onChange: (value: string) => void;
 };
 
-function formatBidDisplay(raw: string, min: number): string {
-  const n = parseFloat(raw);
-  if (!raw || Number.isNaN(n) || n <= 0) return String(Math.max(min, CH_MIN_BID_ETB));
-  if (Number.isInteger(n)) return String(n);
-  return n.toFixed(2).replace(/\.?0+$/, "");
-}
+const sanitizeNumericInput = (input: string) => {
+  let cleaned = input.replace(/[^0-9.]/g, "");
 
-export default function CheretaBidInput({
+  const firstDot = cleaned.indexOf(".");
+
+  if (firstDot !== -1) {
+    cleaned =
+      cleaned.slice(0, firstDot + 1) +
+      cleaned.slice(firstDot + 1).replace(/\./g, "");
+  }
+
+  const [whole, decimal] = cleaned.split(".");
+
+  if (decimal !== undefined) {
+    cleaned = `${whole}.${decimal.slice(0, 2)}`;
+  }
+
+  return cleaned;
+};
+
+const formatAmount = (amount: number) => {
+  if (!Number.isFinite(amount)) return "0";
+  return Number(amount.toFixed(2)).toString();
+};
+
+const CheretaBidInput = ({
   language,
   label,
   value,
-  disabled,
+  disabled = false,
   min,
   max,
-  step,
-  onChange,
-  confirmLabel = "OK",
+  step = 1,
   minHint,
-}: Props) {
-  const [sheetOpen, setSheetOpen] = useState(false);
+  confirmLabel = "OK",
+  onChange,
+}: CheretaBidInputProps) => {
+  const { bold, regular } = useLocalizedTypography(language);
+
+  const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState(value);
-  const { bold, regular, fontFamily } = useLocalizedTypography(language);
 
   useEffect(() => {
-    if (sheetOpen) setDraft(value);
-  }, [sheetOpen, value]);
+    setDraft(value);
+  }, [value]);
 
-  const applyAmount = useCallback(
-    (next: number) => {
-      const clamped = Math.max(min, Math.min(max, next));
-      const asInt = step >= 1 ? Math.round(clamped) : Math.round(clamped * 100) / 100;
-      const str = step >= 1 ? String(asInt) : asInt.toFixed(2);
-      setDraft(str);
-      onChange(str);
-    },
-    [min, max, step, onChange],
+  const safeStep = useMemo(() => {
+    const parsed = Number(step);
+
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  }, [step]);
+
+  const clamp = useCallback(
+    (amount: number) =>
+      Math.min(
+        Math.max(amount, Number.isFinite(min) ? min : 0),
+        Number.isFinite(max) ? max : Number.MAX_SAFE_INTEGER
+      ),
+    [min, max]
   );
 
-  const adjust = (delta: number) => {
-    const current = parseFloat(draft) || min;
-    applyAmount(current + delta);
-  };
+  const commit = useCallback(
+    (nextValue: string) => {
+      const sanitized = sanitizeNumericInput(nextValue);
 
-  const display = formatBidDisplay(value, min);
-  const hintText = minHint ?? `Min. bid: ${CH_MIN_BID_ETB} ETB`;
+      setDraft(sanitized);
+      onChange(sanitized);
+    },
+    [onChange]
+  );
+
+  const changeBy = useCallback(
+    (direction: 1 | -1) => {
+      const current = Number.parseFloat(draft);
+      const base = Number.isFinite(current) ? current : min;
+
+      const next = clamp(base + direction * safeStep);
+      const formatted = formatAmount(next);
+
+      setDraft(formatted);
+      onChange(formatted);
+    },
+    [clamp, draft, min, onChange, safeStep]
+  );
+
+  const handleBlur = useCallback(() => {
+    setFocused(false);
+
+    const parsed = Number.parseFloat(draft);
+
+    if (!Number.isFinite(parsed)) {
+      const fallback = formatAmount(clamp(min));
+
+      setDraft(fallback);
+      onChange(fallback);
+      return;
+    }
+
+    const clamped = clamp(parsed);
+    const formatted = formatAmount(clamped);
+
+    setDraft(formatted);
+    onChange(formatted);
+  }, [clamp, draft, min, onChange]);
+
+  const handleDone = useCallback(() => {
+    handleBlur();
+    Keyboard.dismiss();
+  }, [handleBlur]);
+
+  const canDecrease =
+    !disabled &&
+    Number.isFinite(Number.parseFloat(draft)) &&
+    Number.parseFloat(draft) > min;
+
+  const canIncrease =
+    !disabled &&
+    Number.isFinite(Number.parseFloat(draft)) &&
+    Number.parseFloat(draft) < max;
 
   return (
-    <>
-      <View style={[styles.bar, disabled && styles.barDisabled]}>
-        <View style={styles.iconBox}>
-          <MaterialCommunityIcons name="gavel" size={22} color="#4B5563" />
+    <View
+      style={{
+        marginTop: 5,
+        borderWidth: 1,
+        borderColor: focused ? "#3D5D96" : "#E5E7EB",
+        borderRadius: 15,
+        backgroundColor: "#FFFFFF",
+        paddingHorizontal: 9,
+        paddingVertical: 4,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          minHeight: 42,
+        }}
+      >
+        {/* BID ICON */}
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            backgroundColor: "#F1F5F9",
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 7,
+          }}
+        >
+          <MaterialCommunityIcons
+            name="gavel"
+            size={19}
+            color="#4B5563"
+          />
         </View>
-        <View style={styles.textRow}>
-          <Text style={[regular, styles.label, { fontFamily: fontFamily() }]}>{label}</Text>
-          <TouchableOpacity
-            disabled={disabled}
-            onPress={() => setSheetOpen(true)}
-            activeOpacity={0.7}
-            style={styles.dashHit}
+
+        {/* LABEL */}
+        <View
+          style={{
+            flex: 1,
+            minWidth: 0,
+            flexShrink: 1,
+            justifyContent: "center",
+            marginRight: 5,
+          }}
+        >
+          <Text
+            style={[
+              regular,
+              {
+                color: "#374151",
+                fontSize: 12,
+                lineHeight: 16,
+              },
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
           >
+            {label}
+          </Text>
+
+          {!!minHint && (
             <Text
-              style={[bold, styles.amount, { fontFamily: fontFamily(true) }]}
+              style={[
+                regular,
+                {
+                  color: "#9CA3AF",
+                  fontSize: 9,
+                  lineHeight: 12,
+                  marginTop: 0,
+                },
+              ]}
               numberOfLines={1}
               adjustsFontSizeToFit
-              minimumFontScale={0.65}
+              minimumFontScale={0.75}
             >
-              {display} ETB
+              {minHint}
             </Text>
-            <View style={styles.underline} />
-          </TouchableOpacity>
+          )}
         </View>
+
+        {/* MINUS */}
+        <TouchableOpacity
+          onPress={() => changeBy(-1)}
+          disabled={!canDecrease}
+          activeOpacity={0.75}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: canDecrease ? "#D1D5DB" : "#E5E7EB",
+            backgroundColor: canDecrease ? "#FFFFFF" : "#F3F4F6",
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 2,
+          }}
+        >
+          <MaterialCommunityIcons
+            name="minus"
+            size={16}
+            color={canDecrease ? "#3D5D96" : "#B9C0C9"}
+          />
+        </TouchableOpacity>
+
+        {/* NUMBER FIELD */}
+        <View
+          style={{
+            width: 90,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <TextInput
+            value={draft}
+            editable={!disabled}
+            keyboardType="decimal-pad"
+            inputMode="decimal"
+            returnKeyType="done"
+            selectTextOnFocus
+            onFocus={() => setFocused(true)}
+            onBlur={handleBlur}
+            onChangeText={commit}
+            onSubmitEditing={handleDone}
+            maxLength={12}
+            placeholder="0"
+            placeholderTextColor="#9CA3AF"
+            style={[
+              bold,
+              {
+                width: 90,
+                paddingVertical: 1,
+                paddingHorizontal: 0,
+                color: "#111827",
+                fontSize: 15,
+                lineHeight: 19,
+                textAlign: "center",
+                borderBottomWidth: 1.5,
+                borderBottomColor: focused
+                  ? "#3D5D96"
+                  : "#374151",
+              },
+            ]}
+          />
+
+          <Text
+            style={[
+              regular,
+              {
+                color: "#9CA3AF",
+                fontSize: 8,
+                lineHeight: 10,
+                marginTop: 1,
+              },
+            ]}
+          >
+            ETB
+          </Text>
+        </View>
+
+        {/* PLUS */}
+        <TouchableOpacity
+          onPress={() => changeBy(1)}
+          disabled={!canIncrease}
+          activeOpacity={0.75}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: canIncrease ? "#D1D5DB" : "#E5E7EB",
+            backgroundColor: canIncrease ? "#FFFFFF" : "#F3F4F6",
+            alignItems: "center",
+            justifyContent: "center",
+            marginLeft: 2,
+          }}
+        >
+          <MaterialCommunityIcons
+            name="plus"
+            size={16}
+            color={canIncrease ? "#3D5D96" : "#B9C0C9"}
+          />
+        </TouchableOpacity>
       </View>
 
-      <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.handle} />
-            <Text style={[bold, styles.sheetTitle, { fontFamily: fontFamily(true) }]}>{label}</Text>
-            <View style={styles.stepper}>
-              <TouchableOpacity style={styles.stepBtn} onPress={() => adjust(-step)} activeOpacity={0.75}>
-                <MaterialCommunityIcons name="minus" size={26} color="#374151" />
-              </TouchableOpacity>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.amountScroll}>
-                <Text
-                  style={[bold, styles.sheetAmount, { fontFamily: fontFamily(true) }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.5}
-                >
-                  {formatBidDisplay(draft, min)} ETB
-                </Text>
-              </ScrollView>
-              <TouchableOpacity style={styles.stepBtn} onPress={() => adjust(step)} activeOpacity={0.75}>
-                <MaterialCommunityIcons name="plus" size={26} color="#374151" />
-              </TouchableOpacity>
-            </View>
-            <Text style={[regular, styles.hint, { fontFamily: fontFamily() }]}>{hintText}</Text>
-            <TouchableOpacity
-              style={[styles.doneBtn, { backgroundColor: CH_SUBMIT_GREEN }]}
-              onPress={() => {
-                onChange(formatBidDisplay(draft, min));
-                setSheetOpen(false);
-              }}
-            >
-              <Text style={[bold, styles.doneText, { fontFamily: fontFamily(true) }]}>{confirmLabel}</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    </>
+      {/* CONFIRM BUTTON */}
+      {focused && !disabled && (
+        <TouchableOpacity
+          onPress={handleDone}
+          activeOpacity={0.8}
+          style={{
+            alignSelf: "flex-end",
+            marginTop: 3,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            borderRadius: 10,
+            backgroundColor: "#EEF4FF",
+          }}
+        >
+          <Text
+            style={[
+              bold,
+              {
+                color: "#3D5D96",
+                fontSize: 10,
+              },
+            ]}
+          >
+            {confirmLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FAFAFA",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    minHeight: 56,
-  },
-  barDisabled: { opacity: 0.55 },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#E8EDF3",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  textRow: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "baseline",
-    gap: 6,
-  },
-  label: {
-    fontSize: 15,
-    color: "#374151",
-  },
-  dashHit: {
-    flex: 1,
-    paddingBottom: 2,
-    minWidth: 72,
-    maxWidth: "100%",
-  },
-  amount: {
-    fontSize: 16,
-    color: "#111827",
-  },
-  underline: {
-    height: 2,
-    backgroundColor: "#374151",
-    marginTop: 2,
-    borderRadius: 1,
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 36,
-  },
-  handle: {
-    width: 48,
-    height: 5,
-    backgroundColor: "#D1D5DB",
-    borderRadius: 3,
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  sheetTitle: {
-    fontSize: 18,
-    color: "#111827",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  stepper: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-    marginBottom: 12,
-  },
-  stepBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  amountScroll: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sheetAmount: {
-    fontSize: 30,
-    color: CH_VIEW_MORE_BLUE,
-    textAlign: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  hint: {
-    textAlign: "center",
-    color: "#6B7280",
-    marginBottom: 20,
-  },
-  doneBtn: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
-  },
-  doneText: { color: "#fff", fontSize: 16 },
-});
+export default CheretaBidInput;

@@ -1,7 +1,7 @@
 import { ImageSource } from "expo-image";
 
 const LOCAL_IMAGES: Record<string, ImageSource> = {
-  dubia: require("../assets/images/dubia/dubia.jpg") ,                                                                      
+  dubia: require("../assets/images/dubia/dubia.jpg"),
   dubia1: require("../assets/images/dubia/dubia1.jpg"),
   dubia2: require("../assets/images/dubia/dubia2.jpeg"),
   dubia3: require("../assets/images/dubia/dubia3.jpeg"),

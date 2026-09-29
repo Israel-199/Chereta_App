@@ -33,7 +33,8 @@ function AuctionMetricCarousel({ metrics, bold, regular }: Props) {
         <View
           key={m.key}
           style={{
-            width: 132,
+            minWidth: 140,
+            alignSelf: "flex-start",
             backgroundColor: "#F9FAFB",
             borderRadius: 14,
             borderWidth: 1,
@@ -59,7 +60,7 @@ function AuctionMetricCarousel({ metrics, bold, regular }: Props) {
           </View>
           <View style={{ flex: 1 }}>
             {m.label ? (
-              <Text style={[regular, { fontSize: 10, color: "#6B7280", marginBottom: 2 }]} numberOfLines={1}>
+              <Text style={[regular, { fontSize: 10, color: "#6B7280", marginBottom: 2 }]}>
                 {m.label}
               </Text>
             ) : null}
@@ -94,7 +95,30 @@ export function buildAuctionMetrics(input: {
   bidsLabel: string;
   bidCount: number;
 }): Metric[] {
+  if (input.ended) {
+    return [
+      {
+        key: "bids",
+        icon: "history",
+        iconBg: "#E0E7FF",
+        iconColor: "#3D5D96",
+        label: input.bidsLabel,
+        value: String(input.bidCount),
+        valueColor: "#3D5D96",
+      },
+    ];
+  }
+
   return [
+    {
+      key: "timer",
+      icon: "timer-outline",
+      iconBg: "#FEE2E2",
+      iconColor: CH_TIMER_RED,
+      label: "",
+      value: input.countdown,
+      valueColor: CH_TIMER_RED,
+    },
     {
       key: "fee",
       icon: "gavel",
@@ -110,15 +134,6 @@ export function buildAuctionMetrics(input: {
       iconColor: "#2563EB",
       label: input.codeLabel,
       value: input.auctionCode,
-    },
-    {
-      key: "timer",
-      icon: input.ended ? "clock-outline" : "timer-outline",
-      iconBg: "#FEE2E2",
-      iconColor: CH_TIMER_RED,
-      label: "",
-      value: input.ended ? input.endedLabel : input.countdown,
-      valueColor: input.ended ? "#9CA3AF" : CH_TIMER_RED,
     },
     {
       key: "bids",

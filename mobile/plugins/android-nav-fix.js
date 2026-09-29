@@ -23,6 +23,7 @@ const withAndroidNavFix = (config) => {
             { $: { name: 'android:windowLightNavigationBar' }, _: 'false' },
             { $: { name: 'android:navigationBarDividerColor' }, _: '#000000' },
             { $: { name: 'android:enforceNavigationBarContrast' }, _: 'false' },
+            { $: { name: 'android:windowOptOutEdgeToEdgeEnforcement' }, _: 'true' },
           ];
 
           // Window/status bar items — only for AppTheme, NOT splash

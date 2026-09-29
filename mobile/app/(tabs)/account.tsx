@@ -400,6 +400,22 @@ const AccountScreen = () => {
         </View>
 
         <View style={styles.section}>
+          <Text style={[styles.sectionTitle, nameFontStyle]}>{t?.cheretaActivity || "My Chereta"}</Text>
+          <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/myBidsScreen")} activeOpacity={0.6}>
+            <MaterialCommunityIcons name="gavel" size={20} color="#3D5D96" />
+            <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.myBidsTitle || "My Bids"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/myWinningsScreen")} activeOpacity={0.6}>
+            <MaterialCommunityIcons name="trophy" size={20} color="#3D5D96" />
+            <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.myWinningsTitle || "My Winnings"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/myHistoryScreen")} activeOpacity={0.6}>
+            <MaterialCommunityIcons name="history" size={20} color="#3D5D96" />
+            <Text style={[styles.itemText, regularFontStyle, { marginLeft: 8 }]}>{t?.myHistoryTitle || "My History"}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
           <Text style={[styles.sectionTitle, nameFontStyle]}>{t?.promotion}</Text>
           <TouchableOpacity style={styles.item} onPress={() => navigateTo("/screen/profileScreen/referral")} activeOpacity={0.6}>
             <MaterialCommunityIcons name="account-group" size={20} color="#3D5D96" />

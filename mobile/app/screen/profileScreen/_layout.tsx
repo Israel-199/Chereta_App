@@ -64,8 +64,11 @@ export default function ProfileLayout() {
         },
       }}
     >
-    <Stack.Screen
-        name="personalInfoScreen"
+      <Stack.Screen name="myBidsScreen" />
+      <Stack.Screen name="myWinningsScreen" />
+      <Stack.Screen name="myHistoryScreen" />
+
+      <Stack.Screen
         options={{
           title: t.updateAccount,
           headerRight: refreshButton,

@@ -295,7 +295,6 @@ const AppContent = memo(() => {
 
   return (
     <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
-      {Platform.OS === "android" && <NavigationBar style="dark" hidden={false} />}
       <AppStatusBar />
       <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
       <Stack

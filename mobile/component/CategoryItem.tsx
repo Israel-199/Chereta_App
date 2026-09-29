@@ -12,7 +12,6 @@ import { Image } from 'expo-image';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCategoryItemStyles, useCategoryIconSize } from "../styles/catagoriesItemStyles";
 import { typography } from "../styles/typography";
-import { VideoView, useVideoPlayer } from "expo-video";
 
 const isAmharic = (text: string) => /[\u1200-\u137F]/.test(text);
 
@@ -26,20 +25,9 @@ type Props = {
   imageStyle?: object;
   size?: "small" | "medium" | "large";
   style?: ViewStyle;
-  videoSource?: any;
   overlayText?: string;
   isLoading?: boolean;
 };
-
-const VideoLoader = memo(({ source, style }: { source: any, style: any }) => {
-  const player = useVideoPlayer(source, (p) => {
-    if (p) {
-      p.loop = true;
-      p.play();
-    }
-  });
-  return <VideoView style={style} player={player} contentFit="cover" />;
-});
 
 const CategoryItem = ({
   iconName,
@@ -51,7 +39,6 @@ const CategoryItem = ({
   imageStyle,
   size = "medium",
   style,
-  videoSource,
   overlayText,
   isLoading = false,
 }: Props) => {
@@ -86,7 +73,6 @@ const CategoryItem = ({
     style,
   ], [styles.item, scale, opacity, style]);
 
-  const videoStyle = useMemo(() => ({ width: '60%', height: '60%' } as const), []);
   const tintStyle = useMemo(() => (tint ? { tintColor: "#8DB048" } : {}), [tint]);
 
   return (
@@ -95,8 +81,6 @@ const CategoryItem = ({
         <View style={styles.iconBox}>
           {isLoading ? (
             <ActivityIndicator size="small" color="#8DB048" style={{ marginVertical: 4 }} />
-          ) : videoSource ? (
-            <VideoLoader source={videoSource} style={videoStyle} />
           ) : imageSource ? (
             <Image
               source={imageSource}

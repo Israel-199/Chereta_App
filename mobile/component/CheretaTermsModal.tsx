@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   checkRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18, marginTop: 4 },
   checkLabel: { flex: 1, color: "#111827", fontSize: 15 },
   primary: {
-    backgroundColor: LEMON_GREEN,
+    backgroundColor: "#8DB048",
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: "center",

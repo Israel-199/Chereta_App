@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, memo } from "react";
 import { View, Text, FlatList, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNotificationStore, NotificationItem } from "@/store/notificationStore";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import Navbar from "../../component/Navbar";
 import ImmersiveNavScreen from "../../component/ImmersiveNavScreen";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
@@ -136,6 +136,12 @@ export default function NotificationsScreen() {
     }
     return bold ? "NotoSans-Bold" : "NotoSans-Regular";
   }, [language]);
+
+  useFocusEffect(
+    useCallback(() => {
+      markAllAsRead();
+    }, [markAllAsRead])
+  );
 
   const leftIcon = useMemo(() => <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />, []);
   const secondIconStyle = useMemo(() => <MaterialCommunityIcons name="delete-sweep" size={24} color="#fff" />, []);
