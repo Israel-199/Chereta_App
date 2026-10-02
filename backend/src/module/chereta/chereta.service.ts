@@ -260,10 +260,10 @@ export const placeBid = async (
   }
 
   const existingBid = await prisma.bid.findFirst({
-    where: { userId, auctionItemId },
+    where: { userId, auctionItemId, amount: rounded },
   });
   if (existingBid) {
-    throw new Error("You have already placed a bid on this auction");
+    throw new Error(`You have already placed a bid of ${rounded.toFixed(2)} ETB on this auction`);
   }
 
   let paymentId: string | undefined;

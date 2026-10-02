@@ -101,7 +101,7 @@ async function main() {
 
   const endedCount = await prisma.auctionItem.count({ where: { status: "ENDED" } });
   if (endedCount >= 3) {
-    console.log("Winner gallery seed skipped (ended auctions already exist).");
+    console.log("Winner seed skipped (ended auctions already exist).");
     return;
   }
 
